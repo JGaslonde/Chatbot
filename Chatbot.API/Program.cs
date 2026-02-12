@@ -93,6 +93,8 @@ builder.Services.AddScoped<IIntentRecognitionService, SimpleIntentRecognitionSer
 builder.Services.AddScoped<IMessageFilterService, MessageFilterService>();
 builder.Services.AddScoped<IResponseTemplateService, ResponseTemplateService>();
 builder.Services.AddScoped<IConversationSummarizationService, ConversationSummarizationService>();
+builder.Services.AddScoped<IConversationAnalyticsService, ConversationAnalyticsService>();
+builder.Services.AddScoped<IUserPreferencesService, UserPreferencesService>();
 
 // Add CORS with SignalR support
 builder.Services.AddCors(options =>

@@ -16,15 +16,21 @@ public class ChatController : ControllerBase
 {
     private readonly IConversationService _conversationService;
     private readonly IAuthenticationService _authService;
+    private readonly IConversationAnalyticsService _analyticsService;
+    private readonly IUserPreferencesService _preferencesService;
     private readonly ILogger<ChatController> _logger;
 
     public ChatController(
         IConversationService conversationService,
         IAuthenticationService authService,
+        IConversationAnalyticsService analyticsService,
+        IUserPreferencesService preferencesService,
         ILogger<ChatController> logger)
     {
         _conversationService = conversationService;
         _authService = authService;
+        _analyticsService = analyticsService;
+        _preferencesService = preferencesService;
         _logger = logger;
     }
 
@@ -129,5 +135,60 @@ public class ChatController : ControllerBase
     public IActionResult Health()
     {
         return Ok(new HealthResponse("healthy", DateTime.UtcNow, "1.0.0"));
+    }
+
+    [HttpGet("analytics")]
+    public async Task<IActionResult> GetAnalytics([FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
+    {
+        var userIdClaim = User.FindFirst("id")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            throw new UnauthorizedException("Invalid user token");
+
+        var analytics = await _analyticsService.GetAnalyticsAsync(userId, startDate, endDate);
+        return Ok(new ApiResponse<ConversationAnalytics>(true, "Analytics retrieved successfully", analytics));
+    }
+
+    [HttpGet("analytics/sentiment-trends")]
+    public async Task<IActionResult> GetSentimentTrends([FromQuery] int days = 7)
+    {
+        var userIdClaim = User.FindFirst("id")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            throw new UnauthorizedException("Invalid user token");
+
+        var trends = await _analyticsService.GetSentimentTrendsAsync(userId, days);
+        return Ok(new ApiResponse<List<SentimentTrend>>(true, "Sentiment trends retrieved successfully", trends));
+    }
+
+    [HttpGet("analytics/intent-distribution")]
+    public async Task<IActionResult> GetIntentDistribution([FromQuery] int days = 30)
+    {
+        var userIdClaim = User.FindFirst("id")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            throw new UnauthorizedException("Invalid user token");
+
+        var distribution = await _analyticsService.GetIntentDistributionAsync(userId, days);
+        return Ok(new ApiResponse<List<IntentDistribution>>(true, "Intent distribution retrieved successfully", distribution));
+    }
+
+    [HttpGet("preferences")]
+    public async Task<IActionResult> GetPreferences()
+    {
+        var userIdClaim = User.FindFirst("id")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            throw new UnauthorizedException("Invalid user token");
+
+        var preferences = await _preferencesService.GetPreferencesAsync(userId);
+        return Ok(new ApiResponse<UserPreferences>(true, "Preferences retrieved successfully", preferences));
+    }
+
+    [HttpPut("preferences")]
+    public async Task<IActionResult> UpdatePreferences([FromBody] UserPreferences preferences)
+    {
+        var userIdClaim = User.FindFirst("id")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            throw new UnauthorizedException("Invalid user token");
+
+        var updated = await _preferencesService.UpdatePreferencesAsync(userId, preferences);
+        return Ok(new ApiResponse<UserPreferences>(true, "Preferences updated successfully", updated));
     }
 }
