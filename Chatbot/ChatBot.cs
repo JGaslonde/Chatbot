@@ -1,13 +1,18 @@
+using Chatbot.Services;
+
 namespace Chatbot;
 
 /// <summary>
-/// Core chatbot logic with simple response patterns
+/// Core chatbot logic with simple response patterns and advanced features
 /// </summary>
 public class ChatBot
 {
     private readonly Conversation _conversation;
     private readonly Dictionary<string, List<string>> _responsePatterns;
     private readonly Random _random;
+    private readonly SentimentAnalyzer _sentimentAnalyzer;
+    private readonly IntentRecognizer _intentRecognizer;
+    private readonly MessageFilter _messageFilter;
 
     public string Name { get; set; }
 
@@ -17,6 +22,9 @@ public class ChatBot
         _conversation = new Conversation();
         _random = new Random();
         _responsePatterns = InitializeResponsePatterns();
+        _sentimentAnalyzer = new SentimentAnalyzer();
+        _intentRecognizer = new IntentRecognizer();
+        _messageFilter = new MessageFilter();
     }
 
     /// <summary>
@@ -29,11 +37,25 @@ public class ChatBot
             return "Please say something!";
         }
 
-        // Store user message in conversation history
-        _conversation.AddMessage("User", userInput);
+        // Check message filter
+        var filterResult = _messageFilter.CheckMessage(userInput);
+        if (filterResult.IsFiltered)
+        {
+            string reasons = string.Join(", ", filterResult.Reasons);
+            return $"Your message cannot be processed: {reasons}";
+        }
+
+        // Analyze sentiment
+        var sentimentResult = _sentimentAnalyzer.Analyze(userInput);
+        
+        // Recognize intent
+        var intentResult = _intentRecognizer.Recognize(userInput);
+
+        // Store user message with analysis in conversation history
+        _conversation.AddMessage("User", userInput, sentimentResult.Sentiment.ToString(), intentResult.Intent);
 
         // Generate response based on input
-        string response = GenerateResponse(userInput);
+        string response = GenerateResponse(userInput, sentimentResult, intentResult);
         
         // Store bot response in conversation history
         _conversation.AddMessage(Name, response);
@@ -42,58 +64,44 @@ public class ChatBot
     }
 
     /// <summary>
-    /// Generate a response based on user input
+    /// Generate a response based on user input and analysis
     /// </summary>
-    private string GenerateResponse(string input)
+    private string GenerateResponse(string input, SentimentResult sentiment, IntentResult intent)
     {
         string lowerInput = input.ToLower().Trim();
 
-        // Check for greeting patterns
-        if (MatchesPattern(lowerInput, new[] { "hello", "hi", "hey", "greetings", "good morning", "good afternoon", "good evening" }))
+        // Adapt response based on sentiment if very negative
+        if (sentiment.Sentiment == Services.Sentiment.VeryNegative)
         {
-            return GetRandomResponse("greeting");
+            return "I sense you're frustrated. I'm here to help. Let me try to address your concern.";
         }
 
-        // Check for farewell patterns
-        if (MatchesPattern(lowerInput, new[] { "bye", "goodbye", "see you", "farewell", "exit", "quit" }))
+        // Use intent-based routing
+        string response = intent.Intent switch
         {
-            return GetRandomResponse("farewell");
-        }
+            "greeting" => GetRandomResponse("greeting"),
+            "farewell" => GetRandomResponse("farewell"),
+            "help" => GetRandomResponse("help"),
+            "thanks" => GetRandomResponse("thanks"),
+            "question" => GetRandomResponse("question"),
+            _ => GenerateDefaultResponse(lowerInput)
+        };
 
-        // Check for help patterns
-        if (MatchesPattern(lowerInput, new[] { "help", "what can you do", "how do i", "assist", "support" }))
-        {
-            return GetRandomResponse("help");
-        }
+        return response;
+    }
 
-        // Check for question patterns
-        if (lowerInput.Contains("?") || MatchesPattern(lowerInput, new[] { "what", "when", "where", "why", "how", "who" }))
-        {
-            return GetRandomResponse("question");
-        }
-
-        // Check for thanks patterns
-        if (MatchesPattern(lowerInput, new[] { "thank", "thanks", "appreciate" }))
-        {
-            return GetRandomResponse("thanks");
-        }
-
+    /// <summary>
+    /// Generate default response when no specific pattern matches
+    /// </summary>
+    private string GenerateDefaultResponse(string lowerInput)
+    {
         // Check for name request
-        if (MatchesPattern(lowerInput, new[] { "your name", "who are you", "what are you called" }))
+        if (lowerInput.Contains("your name") || lowerInput.Contains("who are you") || lowerInput.Contains("what are you called"))
         {
             return $"I'm {Name}, your friendly chatbot assistant!";
         }
 
-        // Default response
         return GetRandomResponse("default");
-    }
-
-    /// <summary>
-    /// Check if input matches any of the given patterns
-    /// </summary>
-    private bool MatchesPattern(string input, string[] patterns)
-    {
-        return patterns.Any(pattern => input.Contains(pattern));
     }
 
     /// <summary>
@@ -178,9 +186,37 @@ public class ChatBot
         Console.WriteLine("\n=== Recent Conversation History ===");
         foreach (var msg in recentMessages)
         {
-            Console.WriteLine($"[{msg.Timestamp:HH:mm:ss}] {msg.Sender}: {msg.Content}");
+            string analysis = "";
+            if (!string.IsNullOrEmpty(msg.Sentiment) || !string.IsNullOrEmpty(msg.Intent))
+            {
+                analysis = $" [Sentiment: {msg.Sentiment ?? "N/A"}, Intent: {msg.Intent ?? "N/A"}]";
+            }
+            Console.WriteLine($"[{msg.Timestamp:HH:mm:ss}] {msg.Sender}: {msg.Content}{analysis}");
         }
         Console.WriteLine("===================================\n");
+    }
+
+    /// <summary>
+    /// Analyze a message and display the results
+    /// </summary>
+    public void AnalyzeMessage(string message)
+    {
+        Console.WriteLine("\n=== Message Analysis ===");
+        Console.WriteLine($"Message: {message}");
+        
+        var sentiment = _sentimentAnalyzer.Analyze(message);
+        Console.WriteLine($"Sentiment: {sentiment.Sentiment} (Score: {sentiment.Score:F2})");
+        
+        var intent = _intentRecognizer.Recognize(message);
+        Console.WriteLine($"Intent: {intent.Intent} (Confidence: {intent.Confidence:F2})");
+        
+        var filter = _messageFilter.CheckMessage(message);
+        Console.WriteLine($"Filtered: {filter.IsFiltered}");
+        if (filter.IsFiltered && filter.Reasons.Count > 0)
+        {
+            Console.WriteLine($"Reasons: {string.Join(", ", filter.Reasons)}");
+        }
+        Console.WriteLine("=======================\n");
     }
 
     /// <summary>
