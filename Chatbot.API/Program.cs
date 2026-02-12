@@ -1,7 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using Chatbot.API.Data;
 using Chatbot.API.Services;
 using Chatbot.API.Middleware;
+using Chatbot.API.Hubs;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Chatbot.API.Validators;
@@ -21,7 +25,51 @@ builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
 builder.Services.AddValidatorsFromAssemblyContaining<ChatMessageRequestValidator>();
 
+// Add JWT Authentication
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not configured");
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+        ValidateIssuer = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidateAudience = true,
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
+    };
+    
+    // Configure JWT authentication for SignalR
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            
+            // If the request is for our hub and has a token, use it
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/chat"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
+    };
+});
+
+builder.Services.AddAuthorization();
+
 builder.Services.AddSwaggerGen();
+
+// Add SignalR
+builder.Services.AddSignalR();
 
 // Register repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -37,7 +85,7 @@ builder.Services.AddScoped<IMessageFilterService, MessageFilterService>();
 builder.Services.AddScoped<IResponseTemplateService, ResponseTemplateService>();
 builder.Services.AddScoped<IConversationSummarizationService, ConversationSummarizationService>();
 
-// Add CORS
+// Add CORS with SignalR support
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
@@ -46,6 +94,16 @@ builder.Services.AddCors(options =>
             policyBuilder.AllowAnyOrigin()
                    .AllowAnyMethod()
                    .AllowAnyHeader();
+        });
+    
+    // Separate CORS policy for SignalR (allows credentials)
+    options.AddPolicy("SignalRCors",
+        policyBuilder =>
+        {
+            policyBuilder.WithOrigins("http://localhost:3000", "https://localhost:3000") // Add your client URLs
+                   .AllowAnyMethod()
+                   .AllowAnyHeader()
+                   .AllowCredentials();
         });
 });
 
@@ -79,7 +137,14 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
+// Map SignalR Hub
+app.MapHub<ChatHub>("/hubs/chat").RequireCors("SignalRCors");
+
 app.Run();
+
+// Make Program class accessible for integration tests
+public partial class Program { }

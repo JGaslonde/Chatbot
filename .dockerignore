@@ -1,0 +1,52 @@
+# Ignore build artifacts
+**/bin/
+**/obj/
+**/out/
+
+# Ignore database files (will be created fresh in container)
+**/*.db
+**/*.db-shm
+**/*.db-wal
+
+# Ignore test results
+**/TestResults/
+
+# Ignore IDE and editor files
+**/.vs/
+**/.vscode/
+**/.idea/
+**/*.swp
+**/*.swo
+**/*~
+
+# Ignore git
+.git/
+.gitignore
+.gitattributes
+
+# Ignore documentation
+**/*.md
+!README.md
+
+# Ignore Docker files
+**/.dockerignore
+**/Dockerfile*
+**/docker-compose*
+
+# Ignore local development files
+**/*.user
+**/*.suo
+**/launchSettings.json
+
+# Ignore NuGet packages
+**/*.nupkg
+**/packages/
+
+# Ignore temporary files
+**/tmp/
+**/temp/
+**/.tmp/
+
+# Ignore logs
+**/logs/
+**/*.log

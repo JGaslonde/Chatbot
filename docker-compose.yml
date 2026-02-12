@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  chatbot-api:
+    image: chatbot-api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chatbot-api
+    ports:
+      - "5089:5089"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5089
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/chatbot.db;Cache=Shared
+      - Jwt__Key=${JWT_SECRET_KEY:-your-super-secret-jwt-signing-key-change-this-in-production-minimum-32-characters}
+      - Jwt__Issuer=ChatbotAPI
+      - Jwt__Audience=ChatbotClient
+      - Jwt__ExpireMinutes=1440
+    volumes:
+      - chatbot-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5089/api/chat/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - chatbot-network
+
+  # Optional: Add a reverse proxy (nginx) for production
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: chatbot-nginx
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./ssl:/etc/nginx/ssl:ro
+  #   depends_on:
+  #     - chatbot-api
+  #   restart: unless-stopped
+  #   networks:
+  #     - chatbot-network
+
+volumes:
+  chatbot-data:
+    driver: local
+
+networks:
+  chatbot-network:
+    driver: bridge
