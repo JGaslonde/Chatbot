@@ -2,6 +2,7 @@
 @page "/chat/{ConversationId:int}"
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components
 @attribute [Authorize]
 
 <PageTitle>Chat</PageTitle>
@@ -37,18 +38,9 @@
             <h4>Start a New Conversation</h4>
             <p>Enter a title for your conversation (optional) and click Start.</p>
             <div class="input-group">
-                <input 
-                    type="text" 
-                    class="form-control" 
-                    placeholder="Conversation title (optional)" 
-                    @bind="newConversationTitle"
-                    disabled="@isLoadingConversation"
-                />
-                <button 
-                    class="btn btn-primary" 
-                    @onclick="StartNewConversation"
-                    disabled="@isLoadingConversation"
-                >
+                <input type="text" class="form-control" placeholder="Conversation title (optional)"
+                       @bind="newConversationTitle"                    disabled="@isLoadingConversation"                />
+                <button class="btn btn-primary" @onclick="StartNewConversation"                    disabled="@isLoadingConversation">
                     @if (isLoadingConversation)
                     {
                         <span class="spinner-border spinner-border-sm me-2"></span>
@@ -57,7 +49,21 @@
                 </button>
             </div>
         </div>
+    }
+    else
+    {
+        <div class="messages-container" @ref="messagesContainer">
+            @foreach (var msg in messages)
+            {
+                <ChatMessage Message="msg" />
+            }
+        </div>
 
+        <div class="input-container">
+            <ChatInput OnMessageSent="SendMessage" IsDisabled="@isSending" />
+        </div>
+    }
+</div>
 
 @code {
     [Parameter]
@@ -71,6 +77,9 @@
 
     [Inject]
     private NavigationManager Navigation { get; set; } = null!;
+
+    [Inject]
+    private IJSRuntime JSInterop { get; set; } = null!;
 
     private ConversationResponse? currentConversation;
     private List<MessageDto> messages = new();
@@ -104,8 +113,8 @@
                 if (success && conversation != null)
                 {
                     currentConversation = conversation;
-                    var (histroySuccess, historyMessage, history) = await ChatService.GetHistoryAsync(ConversationId);
-                    if (histroySuccess && history != null)
+                    var (historySuccess, historyMessage, history) = await ChatService.GetHistoryAsync(ConversationId);
+                    if (historySuccess && history != null)
                     {
                         messages = history.Messages.OrderBy(m => m.SentAt).ToList();
                     }
@@ -171,7 +180,7 @@
                 message,
                 "User",
                 DateTime.UtcNow,
-                "",
+                "Neutral",
                 null,
                 0));
 
@@ -181,22 +190,23 @@
             {
                 // Add bot response
                 messages.Add(new MessageDto(
-                    0,
+                    response.ConversationId,
                     response.Message,
                     "Bot",
                     response.Timestamp,
                     response.Sentiment,
                     response.Intent,
-                    response.SentimentScore));
+                    response.SentimentScore
+                ));
             }
             else
             {
-                errorMessage = responseMessage;
+                errorMessage = responseMessage ?? "Error sending message";
             }
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error sending message: {ex.Message}";
+            errorMessage = $"Error: {ex.Message}";
         }
         finally
         {
@@ -233,76 +243,84 @@
         // Auto-scroll would be implemented here with JS interop
         await Task.CompletedTask;
     }
-
-    [Inject]
-    private IJSRuntime JSInterop { get; set; } = null!;
 }
 
 <style>
-.chat-container {
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 100px);
-    max-width: 1000px;
-    margin: 0 auto;
-    border-left: 1px solid #dee2e6;
-    border-right: 1px solid #dee2e6;
-}
+    .chat-container {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 100px);
+        max-width: 1000px;
+        margin: 0 auto;
+        border-left: 1px solid #dee2e6;
+        border-right: 1px solid #dee2e6;
+    }
 
-.chat-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px;
-    border-bottom: 1px solid #dee2e6;
-    background-color: #f8f9fa;
-}
+    .chat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid #dee2e6;
+        background-color: #f8f9fa;
+    }
 
-.header-actions {
-    display: flex;
-    gap: 10px;
-}
+    .chat-header h3 {
+        margin: 0;
+        font-size: 1.5rem;
+    }
 
-.empty-state {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    flex: 1;
-    padding: 30px;
-    text-align: center;
-}
+    .header-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
 
-.empty-messages {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex: 1;
-    color: #999;
-}
+    .messages-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
 
-.messages-container {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
+    .messages-container::-webkit-scrollbar {
+        width: 8px;
+    }
 
-.messages-container::-webkit-scrollbar {
-    width: 8px;
-}
+    .messages-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
 
-.messages-container::-webkit-scrollbar-track {
-    background: #f1f1f1;
-}
+    .messages-container::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
 
-.messages-container::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 4px;
-}
-</style>
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        padding: 2rem;
+        text-align: center;
+        flex: 1;
+    }
+
+    .empty-state h4 {
+        margin: 0;
+        font-size: 1.5rem;
+    }
+
+    .empty-state .input-group {
+        display: flex;
+        gap: 0.5rem;
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .input-container {
         padding: 1rem;
         border-top: 1px solid #ddd;
     }

@@ -1,0 +1,94 @@
+@if (Items == null || Items.Count == 0)
+{
+    <div class="empty-state">
+        <p class="text-muted">No items to display</p>
+    </div>
+}
+else
+{
+    <div class="filter-grid">
+        @foreach (var item in Items)
+        {
+            <div class="filter-item">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="filter_@item.Id"
+                           @onchange="@((ChangeEventArgs e) => OnItemToggled(item, (bool)e.Value!))"
+                           checked="@SelectedItems.Contains(item.Id)"                    />
+                    <label class="form-check-label" for="filter_@item.Id">
+                        @item.Label
+                        @if (item.Count.HasValue)
+                        {
+                            <span class="badge bg-light text-dark ms-2">@item.Count</span>
+                        }
+                    </label>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public List<FilterItem>? Items { get; set; }
+
+    [Parameter]
+    public List<string> SelectedItems { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<List<string>> OnSelectionChanged { get; set; }
+
+    private async Task OnItemToggled(FilterItem item, bool isSelected)
+    {
+        if (isSelected)
+        {
+            if (!SelectedItems.Contains(item.Id))
+                SelectedItems.Add(item.Id);
+        }
+        else
+        {
+            SelectedItems.Remove(item.Id);
+        }
+
+        await OnSelectionChanged.InvokeAsync(SelectedItems);
+    }
+}
+
+<style>
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 6px;
+    }
+
+    .filter-item {
+        padding: 8px;
+        background: white;
+        border-radius: 4px;
+        border: 1px solid #dee2e6;
+    }
+
+    .filter-item:hover {
+        background: #f0f7ff;
+        border-color: #007bff;
+    }
+
+    .form-check {
+        margin: 0;
+    }
+
+    .form-check-input:checked {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+    .badge {
+        font-size: 11px;
+    }
+</style>
+
+@code {
+    public record FilterItem(string Id, string Label, int? Count = null);
+}

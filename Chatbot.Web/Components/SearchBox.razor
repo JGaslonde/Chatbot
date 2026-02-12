@@ -1,0 +1,71 @@
+@if (!string.IsNullOrEmpty(Placeholder))
+{
+    <div class="search-box">
+        <div class="input-group">
+            <span class="input-group-text bg-white border-end-0">
+                <span class="bi bi-search"></span>
+            </span>
+            <input type="text" class="form-control border-start-0"                placeholder="@Placeholder"                @bind="SearchQuery"
+                   @bind:event="oninput"                @onkeyup="OnSearchChanged"            />
+            @if (!string.IsNullOrEmpty(SearchQuery))
+            {
+                <button class="btn btn-outline-secondary" @onclick="ClearSearch"                    title="Clear search">
+                    <span class="bi bi-x-circle"></span>
+                </button>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string? Placeholder { get; set; } = "Search...";
+
+    [Parameter]
+    public string SearchQuery { get; set; } = "";
+
+    [Parameter]
+    public EventCallback<string> OnSearch { get; set; }
+
+    private async Task OnSearchChanged(KeyboardEventArgs e)
+    {
+        await OnSearch.InvokeAsync(SearchQuery);
+    }
+
+    private async Task ClearSearch()
+    {
+        SearchQuery = "";
+        await OnSearch.InvokeAsync("");
+    }
+}
+
+<style>
+    .search-box {
+        margin-bottom: 20px;
+    }
+
+    .search-box .input-group {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .search-box .form-control {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+
+    .search-box .form-control:focus {
+        box-shadow: none;
+        border-color: #dee2e6;
+    }
+
+    .search-box .input-group-text {
+        border-right: none !important;
+        color: #999;
+    }
+
+    .search-box .btn {
+        border-left: none;
+    }
+</style>

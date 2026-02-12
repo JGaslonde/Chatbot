@@ -25,7 +25,7 @@ else
     <div class="content-list">
         @foreach (var item in Items ?? new List<ConversationResponse>())
         {
-            <div class="list-item" @onclick="() => OnItemSelected?.InvokeAsync(item)">
+            <div class="list-item" @onclick="async () => await OnItemSelected.InvokeAsync(item)">
                 <div class="item-header">
                     <h6 class="item-title">@(item.Title ?? "Untitled Conversation")</h6>
                     <small class="text-muted">@item.StartedAt.ToString("g")</small>

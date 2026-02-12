@@ -1,0 +1,417 @@
+@page "/conversation/{ConversationId:int}"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components
+@attribute [Authorize]
+
+<PageTitle>Conversation Details</PageTitle>
+
+<div class="details-container">
+    <div class="details-header">
+        <div>
+            <h1>@(conversation?.Title ?? "Conversation Details")</h1>
+            @if (conversation != null)
+            {
+                <small class="text-muted">
+                    Started: @conversation.StartedAt.ToString("g") |
+                    Messages: @conversation.MessageCount
+                </small>
+            }
+        </div>
+        <div class="header-actions">
+            <a href="/history" class="btn btn-sm btn-outline-secondary">Back to History</a>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <Alert Message="@errorMessage" Type="Alert.AlertType.Error" />
+    }
+
+    @if (isLoading)
+    {
+        <div class="text-center p-5">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (conversation != null)
+    {
+        <div class="details-grid">
+            <!-- Conversation Stats -->
+            <div class="card">
+                <div class="card-header">
+                    <h5>Conversation Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value">@conversation.MessageCount</div>
+                            <div class="stat-label">Total Messages</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">
+                                @if (messages.Count > 0)
+                                {
+                                    @Math.Round(messages.Average(m => double.TryParse(m.SentimentScore.ToString(), out var
+                            score) ? score : 0), 2)
+                                }
+                                else
+                                {
+                                    <span>-</span>
+                                }
+                            </div>
+                            <div class="stat-label">Avg Sentiment</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">
+                                @(messages.Count(m => m.Sender == "User"))
+                            </div>
+                            <div class="stat-label">User Messages</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">
+                                @(messages.Count(m => m.Sender == "Bot"))
+                            </div>
+                            <div class="stat-label">Bot Responses</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sentiment Breakdown -->
+            <div class="card">
+                <div class="card-header">
+                    <h5>Sentiment Breakdown</h5>
+                </div>
+                <div class="card-body">
+                    @if (messages.Count > 0)
+                    {
+                        var sentimentGroups = messages.GroupBy(m => m.Sentiment);
+                        <div class="sentiment-breakdown">
+                            @foreach (var group in sentimentGroups)
+                            {
+                                var percentage = (group.Count() * 100.0) / messages.Count;
+                                <div class="sentiment-stat">
+                                    <span class="sentiment-label">@group.Key</span>
+                                    <div class="sentiment-bar">
+                                        <div class="sentiment-fill @group.Key.ToLower()" style="width: @percentage%"></div>
+                                    </div>
+                                    <span class="sentiment-count">@group.Count() (@percentage.ToString("F0"))%</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Intent Distribution -->
+            <div class="card">
+                <div class="card-header">
+                    <h5>Topics Discussed</h5>
+                </div>
+                <div class="card-body">
+                    @if (messages.Count > 0)
+                    {
+                        var intents = messages
+                            .Where(m => !string.IsNullOrEmpty(m.Intent))
+                            .GroupBy(m => m.Intent)
+                            .OrderByDescending(g => g.Count())
+                            .Take(5);
+
+                        @if (intents.Any())
+                        {
+                            <div class="intent-list">
+                                @foreach (var intent in intents)
+                                {
+                                    <div class="intent-item">
+                                        <span class="intent-name">@intent.Key</span>
+                                        <span class="badge bg-info">@intent.Count()</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted">No intent data available</p>
+                        }
+                    }
+                </div>
+            </div>
+
+            <!-- Message Summary -->
+            <div class="card">
+                <div class="card-header">
+                    <h5>Conversation Summary</h5>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(conversation.Summary))
+                    {
+                        <p>@conversation.Summary</p>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No summary available for this conversation.</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Message Thread -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Message Thread</h5>
+                    <input  type="text"           class="form-control form-control-sm"                     style="width: 200px;"
+                            placeholder="Search messages..."                 @bind="searchQuery"         @bind:event="oninput"             />
+                </div>
+            </div>
+            <div class="card-body">
+                @if (filteredMessages.Count == 0)
+                {
+                    <p class="text-muted">No messages found.</p>
+                }
+                else
+                {
+                    <div class="messages-thread">
+                        @foreach (var message in filteredMessages)
+                        {
+                            <ChatMessage Message="message" IsUserMessage="@(message.Sender == "User")" />
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .details-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .details-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        padding: 15px;
+    }
+
+    .card-header h5 {
+        margin: 0;
+        color: #333;
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 15px;
+    }
+
+    .stat-card {
+        text-align: center;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 6px;
+    }
+
+    .stat-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #007bff;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #666;
+        text-transform: uppercase;
+    }
+
+    .sentiment-breakdown {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .sentiment-stat {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .sentiment-label {
+        min-width: 80px;
+        font-weight: 500;
+    }
+
+    .sentiment-bar {
+        flex: 1;
+        height: 24px;
+        background-color: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .sentiment-fill {
+        height: 100%;
+        transition: width 0.3s ease;
+    }
+
+    .sentiment-fill.positive {
+        background: linear-gradient(90deg, #28a745, #20c997);
+    }
+
+    .sentiment-fill.negative {
+        background: linear-gradient(90deg, #dc3545, #ff6b6b);
+    }
+
+    .sentiment-fill.neutral {
+        background: linear-gradient(90deg, #6c757d, #adb5bd);
+    }
+
+    .sentiment-count {
+        min-width: 50px;
+        text-align: right;
+        font-weight: 500;
+        font-size: 12px;
+    }
+
+    .intent-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .intent-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 4px;
+    }
+
+    .intent-name {
+        font-weight: 500;
+        color: #333;
+    }
+
+    .messages-thread {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        max-height: 600px;
+        overflow-y: auto;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public int ConversationId { get; set; }
+
+    [Inject]
+    private IConversationService ConversationService { get; set; } = null!;
+
+    [Inject]
+    private IChatService ChatService { get; set; } = null!;
+
+    private ConversationResponse? conversation;
+    private List<MessageDto> messages = new();
+    private List<MessageDto> filteredMessages = new();
+    private string searchQuery = "";
+    private string? errorMessage;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadConversationDetails();
+    }
+
+    private async Task LoadConversationDetails()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var (success, message, conv) = await ConversationService.GetConversationAsync(ConversationId);
+            if (success && conv != null)
+            {
+                conversation = conv;
+
+                var (histSuccess, histMessage, history) = await ChatService.GetHistoryAsync(ConversationId);
+                if (histSuccess && history != null)
+                {
+                    messages = history.Messages.OrderBy(m => m.SentAt).ToList();
+                    filteredMessages = messages;
+                }
+            }
+            else
+            {
+                errorMessage = message;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading conversation: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        FilterMessages();
+    }
+
+    private void FilterMessages()
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery))
+        {
+            filteredMessages = messages;
+        }
+        else
+        {
+            var lowerQuery = searchQuery.ToLower();
+            filteredMessages = messages
+                .Where(m => m.Content.ToLower().Contains(lowerQuery))
+                .ToList();
+        }
+    }
+}

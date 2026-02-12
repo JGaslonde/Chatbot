@@ -1,6 +1,7 @@
 @page "/login"
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components
 @attribute [AllowAnonymous]
 
 <PageTitle>Login</PageTitle>
@@ -22,37 +23,23 @@
         <form @onsubmit="HandleLogin">
             <div class="mb-3">
                 <label for="username" class="form-label">Username</label>
-                <input 
-                    type="text" 
-                    class="form-control" 
-                    id="username" 
-                    @bind="username"
-                    disabled="@isLoading"
-                    required
-                />
+                <input type="text" class="form-control" id="username" @bind="username"                    disabled="@isLoading"                    required                />
             </div>
 
             <div class="mb-3">
                 <label for="password" class="form-label">Password</label>
-                <input 
-                    type="password" 
-                    class="form-control" 
-                    id="password" 
-                    @bind="password"
-                    disabled="@isLoading"
-                    required
-                />
+                <input type="password" class="form-control" id="password" @bind="password"                    disabled="@isLoading"
+                       required                />
             </div>
 
             <button type="submit" class="btn btn-primary w-100" disabled="@isLoading">
                 @if (isLoading)
                 {
-                    <span class="spinner-border spinner-border-sm me-2"></span>
-                    Logging in...
+                    <span class="spinner-border spinner-border-sm me-2"></span><text>Logging in...</text>
                 }
                 else
                 {
-                    Login
+                    <text>Login</text>
                 }
             </button>
         </form>
@@ -116,51 +103,93 @@
 }
 
 <style>
-.auth-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 20px;
-}
+    .auth-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 20px;
+    }
 
-.auth-card {
-    background: white;
-    padding: 40px;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-    width: 100%;
-    max-width: 400px;
-}
+    .auth-card {
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        width: 100%;
+        max-width: 400px;
+    }
 
-.auth-card h2 {
-    margin-bottom: 30px;
-    color: #333;
-    text-align: center;
-}
+    .auth-card h2 {
+        margin-bottom: 30px;
+        color: #333;
+        text-align: center;
+    }
 
-.auth-link {
-    text-align: center;
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid #dee2e6;
-}
-
-.auth-link a {
-    color: #007bff;
-    text-decoration: none;
-}
-
-.auth-link a:hover {
-    text-decoration: underline;
-}
-</style>
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
 
     .form-group label {
         display: block;
         margin-bottom: 0.5rem;
         font-weight: 500;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+
+    .form-group input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .btn {
+        padding: 0.75rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background-color: #667eea;
+        color: white;
+        width: 100%;
+    }
+
+    .btn-primary:hover {
+        background-color: #5568d3;
+    }
+
+    .btn-primary:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+    }
+
+    .auth-link {
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #dee2e6;
+    }
+
+    .auth-link a {
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    .auth-link a:hover {
+        text-decoration: underline;
     }
 
     .alert {
@@ -173,5 +202,23 @@
         background-color: #f8d7da;
         border-color: #f5c6cb;
         color: #721c24;
+    }
+
+    .spinner-border {
+        display: inline-block;
+        width: 1rem;
+        height: 1rem;
+        vertical-align: text-bottom;
+        border: 0.25em solid currentColor;
+        border-right-color: transparent;
+        border-radius: 50%;
+        animation: spinner-border 0.75s linear infinite;
+    }
+
+    @@keyframes
+    spinner-border {
+        to {
+            transform: rotate(360deg);
+        }
     }
 </style>

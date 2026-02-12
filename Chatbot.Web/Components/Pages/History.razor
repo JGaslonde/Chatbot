@@ -1,6 +1,7 @@
 @page "/history"
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components
 @attribute [Authorize]
 
 <PageTitle>Conversation History</PageTitle>
@@ -8,6 +9,12 @@
 <div class="history-container">
     <h1>Conversation History</h1>
     <p class="lead">View and manage your past conversations.</p>
+
+    <SearchBox 
+        Placeholder="Search conversations by title or content..."
+        SearchQuery="@searchQuery"
+        OnSearch="@OnSearchChanged"
+    />
 
     @if (isLoading)
     {
@@ -22,10 +29,17 @@
     {
         <Alert Message="@errorMessage" Type="Alert.AlertType.Error" />
     }
-    else if (conversations.Count == 0)
+    else if (filteredConversations.Count == 0)
     {
         <div class="alert alert-info">
-            <p>No conversations yet. <a href="/chat">Start a new conversation</a> to get began!</p>
+            @if (conversations.Count == 0)
+            {
+                <p>No conversations yet. <a href="/chat">Start a new conversation</a> to get began!</p>
+            }
+            else
+            {
+                <p>No conversations match your search.</p>
+            }
         </div>
     }
     else
@@ -43,7 +57,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var conversation in conversations)
+                        @foreach (var conversation in filteredConversations)
                         {
                             <tr>
                                 <td>
@@ -67,6 +81,9 @@
                                 </td>
                                 <td>
                                     <a href="@($"/chat/{conversation.Id}")" class="btn btn-sm btn-primary">View</a>
+                                    <a href=" @($"/conversation/{conversation.Id}")" class="btn btn-sm btn-info" title="Details">
+                                        <span class="bi bi-info-circle"></span>
+                                    </a>
                                     <button class="btn btn-sm btn-outline-secondary" @onclick="() => ExportConversation(conversation)" title="Export">
                                         <span class="bi bi-download"></span>
                                     </button>
@@ -107,13 +124,23 @@
 .table td {
     vertical-align: middle;
 }
+
+.btn-sm {
+    padding: 4px 8px;
+    font-size: 12px;
+}
 </style>
 
 @code {
     [Inject]
     private IConversationService ConversationService { get; set; } = null!;
 
+    [Inject]
+    private ISearchService SearchService { get; set; } = null!;
+
     private List<ConversationResponse> conversations = new();
+    private List<ConversationResponse> filteredConversations = new();
+    private string searchQuery = "";
     private string? errorMessage;
     private string? exportMessage;
     private bool isLoading;
@@ -133,6 +160,7 @@
             if (success && convos != null)
             {
                 conversations = convos.OrderByDescending(c => c.StartedAt).ToList();
+                filteredConversations = conversations;
             }
             else
             {
@@ -147,6 +175,12 @@
         {
             isLoading = false;
         }
+    }
+
+    private async Task OnSearchChanged(string query)
+    {
+        searchQuery = query;
+        filteredConversations = SearchService.SearchConversations(conversations, query);
     }
 
     private async Task ExportConversation(ConversationResponse conversation)

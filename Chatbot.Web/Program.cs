@@ -11,7 +11,7 @@ builder.Services.AddRazorComponents()
 // Add authentication
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<ApiAuthenticationStateProvider>();
-builder.Services.AddScoped<AuthenticationStateProvider>(provider => 
+builder.Services.AddScoped<AuthenticationStateProvider>(provider =>
     provider.GetRequiredService<ApiAuthenticationStateProvider>());
 
 // Configure HttpClient for API
@@ -25,6 +25,8 @@ builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 builder.Services.AddScoped<IPreferencesService, PreferencesService>();
 builder.Services.AddScoped<IConversationService, ConversationService>();
 builder.Services.AddScoped<IChatHubService>(sp => new ChatHubService(apiBaseUrl));
+builder.Services.AddScoped<ISearchService, SearchService>();
+builder.Services.AddScoped<IThemeService, ThemeService>();
 builder.Services.AddLogging();
 
 var app = builder.Build();
