@@ -1,0 +1,110 @@
+@inject IJSRuntime JS
+
+<div class="chat-input-container">
+    <div class="input-group">
+        <input 
+            type="text" 
+            class="form-control chat-input" 
+            placeholder="Type your message..." 
+            @bind="messageText"
+            @onkeyup="OnKeyUp"
+            disabled="@IsSending"
+        />
+        <button 
+            class="btn btn-primary send-button" 
+            @onclick="SendMessage"
+            disabled="@(IsSending || string.IsNullOrWhiteSpace(messageText))"
+        >
+            @if (IsSending)
+            {
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Sending...
+            }
+            else
+            {
+                <span class="bi bi-send-fill"></span> Send
+            }
+        </button>
+    </div>
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="alert alert-danger mt-2" role="alert">
+            @ErrorMessage
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback<string> OnMessageSent { get; set; }
+
+    [Parameter]
+    public bool IsSending { get; set; }
+
+    private string messageText = "";
+    private string? ErrorMessage;
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(messageText))
+            return;
+
+        try
+        {
+            ErrorMessage = null;
+            await OnMessageSent.InvokeAsync(messageText.Trim());
+            messageText = "";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Failed to send message: {ex.Message}";
+        }
+    }
+
+    private async Task OnKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !IsSending)
+        {
+            await SendMessage();
+        }
+    }
+}
+
+<style>
+.chat-input-container {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+}
+
+.chat-input {
+    flex: 1;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.chat-input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.send-button {
+    padding: 10px 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.send-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+</style>

@@ -1,6 +1,6 @@
 ﻿<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">Chatbot.Web</a>
+        <a class="navbar-brand" href="">Chatbot</a>
     </div>
 </div>
 
@@ -8,23 +8,85 @@
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
+        <AuthorizeView>
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
+                        <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+                    </NavLink>
+                </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/chat">
+                        <span class="bi bi-chat-dots-fill-nav-menu" aria-hidden="true"></span> New Chat
+                    </NavLink>
+                </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/history">
+                        <span class="bi bi-clock-history-nav-menu" aria-hidden="true"></span> History
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/analytics">
+                        <span class="bi bi-graph-up-nav-menu" aria-hidden="true"></span> Analytics
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/preferences">
+                        <span class="bi bi-gear-fill-nav-menu" aria-hidden="true"></span> Preferences
+                    </NavLink>
+                </div>
+
+                <hr class="my-3" />
+
+                <div class="nav-item px-3">
+                    <button class="nav-link btn btn-link text-start w-100" @onclick="Logout">
+                        <span class="bi bi-door-left-nav-menu" aria-hidden="true"></span> Logout
+                    </button>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/login">
+                        <span class="bi bi-door-right-fill-nav-menu" aria-hidden="true"></span> Login
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/register">
+                        <span class="bi bi-person-plus-fill-nav-menu" aria-hidden="true"></span> Register
+                    </NavLink>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
     </nav>
 </div>
+
+@code {
+    [Inject]
+    private IAuthService AuthService { get; set; } = null!;
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = null!;
+
+    private async Task Logout()
+    {
+        await AuthService.LogoutAsync();
+        Navigation.NavigateTo("/login");
+    }
+}
+
+<style>
+    .nav-link.btn {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .nav-link.btn:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+</style>
 

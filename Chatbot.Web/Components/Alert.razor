@@ -1,0 +1,70 @@
+@if (!string.IsNullOrEmpty(Message))
+{
+    <div class="alert alert-@GetAlertClass() alert-dismissible fade show" role="alert">
+        @if (IsLoading)
+        {
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        }
+        @Message
+        <button type="button" class="btn-close" @onclick="OnDismiss"></button>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string? Message { get; set; }
+
+    [Parameter]
+    public AlertType Type { get; set; } = AlertType.Info;
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public EventCallback OnDismiss { get; set; }
+
+    [Parameter]
+    public int? AutoDismissMs { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (AutoDismissMs.HasValue && !string.IsNullOrEmpty(Message))
+        {
+            await Task.Delay(AutoDismissMs.Value);
+            await OnDismiss.InvokeAsync();
+        }
+    }
+
+    private string GetAlertClass() => Type switch
+    {
+        AlertType.Success => "success",
+        AlertType.Error => "danger",
+        AlertType.Warning => "warning",
+        _ => "info"
+    };
+
+    public enum AlertType
+    {
+        Info,
+        Success,
+        Warning,
+        Error
+    }
+}
+
+<style>
+.alert {
+    animation: slideIn 0.3s ease-in;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+</style>

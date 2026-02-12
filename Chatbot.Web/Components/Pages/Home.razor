@@ -1,87 +1,240 @@
 ﻿@page "/"
-@using Chatbot.Web.Services
-@inject IAuthService AuthService
-@inject NavigationManager Navigation
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [Authorize]
 
-<PageTitle>Chatbot - Home</PageTitle>
+<PageTitle>Home</PageTitle>
 
 <div class="home-container">
-    <div class="home-content">
-        <h1>Welcome to Chatbot</h1>
-        <p>An intelligent conversational assistant powered by AI</p>
-        
-        <div class="action-buttons">
-            @if (AuthService.IsAuthenticated())
-            {
-                <a href="/chat" class="btn btn-primary btn-lg">Go to Chat</a>
-            }
-            else
-            {
-                <a href="/login" class="btn btn-primary btn-lg">Login</a>
-                <a href="/register" class="btn btn-outline-primary btn-lg">Register</a>
-            }
+    <h1>Welcome to Chatbot</h1>
+    <p class="lead">Start a new conversation or continue an existing one below.</p>
+
+    <div class="home-grid">
+        <div class="home-section">
+            <h3>New Conversation</h3>
+            <p>Start a fresh conversation with the chatbot.</p>
+            <input type="text" @bind="newConversationTitle" placeholder="Optional: Give your conversation a title" class="form-control mb-2" />
+            <button class="btn btn-primary" @onclick="StartNewConversation" disabled="@IsLoading">
+                @if (IsLoading)
+                {
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                }
+                Start Conversation
+            </button>
         </div>
 
-        <div class="features">
-            <h3>Features:</h3>
-            <ul>
-                <li>Real-time conversations with AI chatbot</li>
-                <li>Sentiment analysis of messages</li>
-                <li>Intent recognition</li>
-                <li>Conversation history tracking</li>
-                <li>Secure JWT authentication</li>
-            </ul>
+        <div class="home-section">
+            <h3>Recent Conversations</h3>
+            <ContentList 
+                Items="conversations" 
+                IsLoading="IsLoadingConversations"
+                ErrorMessage="conversationError"
+                EmptyMessage="No conversations yet. Start one to get began!"
+                OnItemSelected="SelectConversation" />
+        </div>
+
+        <div class="home-section">
+            <h3>Quick Stats</h3>
+            @if (IsLoadingAnalytics)
+            {
+                <p><span class="spinner-border spinner-border-sm me-2"></span>Loading analytics...</p>
+            }
+            else if (analytics != null)
+            {
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-value">@analytics.TotalConversations</span>
+                        <span class="stat-label">Total Conversations</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">@analytics.TotalMessages</span>
+                        <span class="stat-label">Total Messages</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">@analytics.AverageSentiment.ToString("F2")</span>
+                        <span class="stat-label">Avg Sentiment</span>
+                    </div>
+                </div>
+            }
+            else if (!string.IsNullOrEmpty(analyticsError))
+            {
+                <p class="text-danger">@analyticsError</p>
+            }
         </div>
     </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <Alert Message="@errorMessage" Type="Alert.AlertType.Error" />
+    }
 </div>
 
 <style>
-    .home-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 80vh;
-        text-align: center;
-    }
+.home-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
 
-    .home-content {
-        max-width: 600px;
-        padding: 2rem;
-    }
+.home-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
+    margin: 30px 0;
+}
 
-    .home-content h1 {
-        font-size: 2.5rem;
-        margin-bottom: 1rem;
-    }
+.home-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
 
-    .home-content p {
-        font-size: 1.2rem;
-        color: #666;
-        margin-bottom: 2rem;
-    }
+.home-section h3 {
+    margin-top: 0;
+    color: #333;
+}
 
-    .action-buttons {
-        display: flex;
-        gap: 1rem;
-        justify-content: center;
-        margin-bottom: 2rem;
-    }
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 15px;
+}
 
-    .features {
-        text-align: left;
-        margin-top: 3rem;
-    }
+.stat-item {
+    background: white;
+    padding: 15px;
+    border-radius: 6px;
+    text-align: center;
+    border: 1px solid #dee2e6;
+}
 
-    .features h3 {
-        margin-bottom: 1rem;
-    }
+.stat-value {
+    display: block;
+    font-size: 24px;
+    font-weight: bold;
+    color: #007bff;
+    margin-bottom: 5px;
+}
 
-    .features ul {
-        list-style-position: inside;
-    }
-
-    .features li {
-        margin-bottom: 0.5rem;
-    }
+.stat-label {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    text-transform: uppercase;
+}
 </style>
+
+@code {
+    [Inject]
+    private IChatService ChatService { get; set; } = null!;
+
+    [Inject]
+    private IConversationService ConversationService { get; set; } = null!;
+
+    [Inject]
+    private IAnalyticsService AnalyticsService { get; set; } = null!;
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = null!;
+
+    private List<ConversationResponse> conversations = new();
+    private ConversationAnalytics? analytics;
+    private string newConversationTitle = "";
+    private string? errorMessage;
+    private string? conversationError;
+    private string? analyticsError;
+    private bool IsLoading;
+    private bool IsLoadingConversations;
+    private bool IsLoadingAnalytics;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadConversations();
+        await LoadAnalytics();
+    }
+
+    private async Task LoadConversations()
+    {
+        IsLoadingConversations = true;
+        conversationError = null;
+        try
+        {
+            var (success, message, convos) = await ConversationService.GetConversationsAsync();
+            if (success && convos != null)
+            {
+                conversations = convos.OrderByDescending(c => c.StartedAt).ToList();
+            }
+            else
+            {
+                conversationError = message;
+            }
+        }
+        catch (Exception ex)
+        {
+            conversationError = $"Error loading conversations: {ex.Message}";
+        }
+        finally
+        {
+            IsLoadingConversations = false;
+        }
+    }
+
+    private async Task LoadAnalytics()
+    {
+        IsLoadingAnalytics = true;
+        analyticsError = null;
+        try
+        {
+            var (success, message, data) = await AnalyticsService.GetAnalyticsAsync();
+            if (success && data != null)
+            {
+                analytics = data;
+            }
+            else
+            {
+                analyticsError = message;
+            }
+        }
+        catch (Exception ex)
+        {
+            analyticsError = $"Error loading analytics: {ex.Message}";
+        }
+        finally
+        {
+            IsLoadingAnalytics = false;
+        }
+    }
+
+    private async Task StartNewConversation()
+    {
+        IsLoading = true;
+        errorMessage = null;
+        try
+        {
+            var (success, message, conversation) = await ChatService.StartConversationAsync(newConversationTitle);
+            if (success && conversation != null)
+            {
+                Navigation.NavigateTo($"/chat/{conversation.Id}");
+            }
+            else
+            {
+                errorMessage = message;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error starting conversation: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private void SelectConversation(ConversationResponse conversation)
+    {
+        Navigation.NavigateTo($"/chat/{conversation.Id}");
+    }
+}
 

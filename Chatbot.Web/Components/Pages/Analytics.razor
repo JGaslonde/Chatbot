@@ -1,0 +1,350 @@
+@page "/analytics"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [Authorize]
+
+<PageTitle>Analytics</PageTitle>
+
+<div class="analytics-container">
+    <h1>Analytics & Insights</h1>
+    <p class="lead">View your conversation analytics and trends.</p>
+
+    @if (isLoading)
+    {
+        <div class="text-center p-5">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3">Loading analytics...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <Alert Message="@errorMessage" Type="Alert.AlertType.Error" />
+    }
+    else if (analytics != null)
+    {
+        <div class="analytics-grid">
+            <!-- Overall Stats -->
+            <div class="card">
+                <div class="card-header">
+                    <h5>Overall Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="stat-grid">
+                        <div class="stat-card">
+                            <div class="stat-value">@analytics.TotalConversations</div>
+                            <div class="stat-label">Total Conversations</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">@analytics.TotalMessages</div>
+                            <div class="stat-label">Total Messages</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">@analytics.AverageSentiment.ToString("F2")</div>
+                            <div class="stat-label">Average Sentiment</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sentiment Distribution -->
+            @if (analytics.SentimentDistribution.Count > 0)
+            {
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Sentiment Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="sentiment-list">
+                            @foreach (var kvp in analytics.SentimentDistribution)
+                            {
+                                <div class="sentiment-item">
+                                    <span class="sentiment-label">@kvp.Key</span>
+                                    <div class="sentiment-bar">
+                                        <div class="sentiment-fill @GetSentimentClass(kvp.Key)" style="width: @GetPercentage(kvp.Value, analytics.SentimentDistribution.Values.Sum())%"></div>
+                                    </div>
+                                    <span class="sentiment-count">@kvp.Value</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Intent Distribution -->
+            @if (analytics.IntentDistribution.Count > 0)
+            {
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Top Intents</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="intent-list">
+                            @foreach (var kvp in analytics.IntentDistribution.OrderByDescending(x => x.Value).Take(5))
+                            {
+                                <div class="intent-item">
+                                    <span class="intent-label">@kvp.Key</span>
+                                    <div class="intent-bar">
+                                        <div class="intent-fill" style="width: @GetPercentage(kvp.Value, analytics.IntentDistribution.Values.Sum())%"></div>
+                                    </div>
+                                    <span class="intent-count">@kvp.Value (@GetPercentage(kvp.Value, analytics.IntentDistribution.Values.Sum()).ToString("F0"))%</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Sentiment Trends -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5>Sentiment Trends (Last 7 Days)</h5>
+            </div>
+            <div class="card-body">
+                @if (sentimentTrends.Count > 0)
+                {
+                    <div class="trends-graph">
+                        @foreach (var trend in sentimentTrends)
+                        {
+                            <div class="trend-item">
+                                <div class="trend-label">@trend.Date.ToString("ddd")</div>
+                                <div class="trend-bar">
+                                    <div class="trend-fill" style="height: @(trend.AverageSentiment * 100)%"></div>
+                                </div>
+                                <div class="trend-value">@trend.AverageSentiment.ToString("F2")</div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted">No sentiment trend data available.</p>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+.analytics-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
+    margin: 30px 0;
+}
+
+.card {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 15px;
+}
+
+.card-header h5 {
+    margin: 0;
+    color: #333;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 15px;
+}
+
+.stat-card {
+    text-align: center;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+    text-transform: uppercase;
+}
+
+.sentiment-list, .intent-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.sentiment-item, .intent-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sentiment-label, .intent-label {
+    min-width: 80px;
+    font-weight: 500;
+}
+
+.sentiment-bar, .intent-bar {
+    flex: 1;
+    height: 24px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.sentiment-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #28a745, #20c997);
+    transition: width 0.3s ease;
+}
+
+.sentiment-fill.Positive {
+    background: linear-gradient(90deg, #28a745, #20c997);
+}
+
+.sentiment-fill.Negative {
+    background: linear-gradient(90deg, #dc3545, #ff6b6b);
+}
+
+.sentiment-fill.Neutral {
+    background: linear-gradient(90deg, #6c757d, #adb5bd);
+}
+
+.intent-fill {
+    background: linear-gradient(90deg, #007bff, #0056b3);
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.sentiment-count, .intent-count {
+    min-width: 50px;
+    text-align: right;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.trends-graph {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    height: 200px;
+    margin-top: 20px;
+}
+
+.trend-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.trend-label {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.trend-bar {
+    width: 100%;
+    height: 120px;
+    background-color: #e9ecef;
+    border-radius: 4px 4px 0 0;
+    overflow: hidden;
+}
+
+.trend-fill {
+    width: 100%;
+    background: linear-gradient(180deg, #007bff, #0056b3);
+    transition: height 0.3s ease;
+}
+
+.trend-value {
+    font-size: 12px;
+    font-weight: 500;
+}
+</style>
+
+@code {
+    [Inject]
+    private IAnalyticsService AnalyticsService { get; set; } = null!;
+
+    private ConversationAnalytics? analytics;
+    private List<SentimentTrend> sentimentTrends = new();
+    private string? errorMessage;
+    private bool isLoading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAnalytics();
+    }
+
+    private async Task LoadAnalytics()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            var (success, message, data) = await AnalyticsService.GetAnalyticsAsync();
+            if (success && data != null)
+            {
+                analytics = data;
+
+                // Load sentiment trends
+                var (trendsSuccess, trendsMessage, trends) = await AnalyticsService.GetSentimentTrendsAsync(7);
+                if (trendsSuccess && trends != null)
+                {
+                    sentimentTrends = trends;
+                }
+            }
+            else
+            {
+                errorMessage = message;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading analytics: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string GetSentimentClass(string sentiment)
+    {
+        return sentiment switch
+        {
+            "Positive" => "Positive",
+            "Negative" => "Negative",
+            "Neutral" => "Neutral",
+            _ => ""
+        };
+    }
+
+    private double GetPercentage(int value, int total)
+    {
+        return total == 0 ? 0 : (value * 100.0) / total;
+    }
+}

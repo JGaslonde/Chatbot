@@ -1,0 +1,258 @@
+@page "/preferences"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [Authorize]
+
+<PageTitle>Preferences</PageTitle>
+
+<div class="preferences-container">
+    <h1>User Preferences</h1>
+    <p class="lead">Customize your chatbot experience.</p>
+
+    @if (isLoading)
+    {
+        <div class="text-center p-5">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3">Loading your preferences...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <Alert Message="@errorMessage" Type="Alert.AlertType.Error" />
+    }
+    else
+    {
+        @if (!string.IsNullOrEmpty(successMessage))
+        {
+            <Alert Message="@successMessage" Type="Alert.AlertType.Success" AutoDismissMs="3000" />
+        }
+
+        <div class="preferences-form">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Display Settings</h5>
+
+                    <div class="mb-3">
+                        <label for="themeSelect" class="form-label">Theme</label>
+                        <select class="form-select" id="themeSelect" @bind="preferences!.Theme">
+                            <option value="light">Light</option>
+                            <option value="dark">Dark</option>
+                        </select>
+                        <small class="form-text text-muted">Choose your preferred color theme.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="languageSelect" class="form-label">Language</label>
+                        <select class="form-select" id="languageSelect" @bind="preferences!.Language">
+                            <option value="en">English</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr">French</option>
+                            <option value="de">German</option>
+                        </select>
+                        <small class="form-text text-muted">Select your preferred language.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="darkModeToggle" @bind="preferences!.DarkMode" />
+                            <label class="form-check-label" for="darkModeToggle">
+                                Enable Dark Mode
+                            </label>
+                        </div>
+                        <small class="form-text text-muted">Use dark mode for the interface.</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h5 class="card-title">Notification Settings</h5>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="notificationsToggle" @bind="preferences!.NotificationsEnabled" />
+                            <label class="form-check-label" for="notificationsToggle">
+                                Enable Notifications
+                            </label>
+                        </div>
+                        <small class="form-text text-muted">Receive notifications about new messages and updates.</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h5 class="card-title">Display Preferences</h5>
+
+                    <div class="mb-3">
+                        <label for="pageSizeSelect" class="form-label">Messages Per Page</label>
+                        <select class="form-select" id="pageSizeSelect" @bind="preferences!.MessagePageSize">
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <small class="form-text text-muted">Number of messages to display per page in history.</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button class="btn btn-primary me-2" @onclick="SavePreferences" disabled="@isSaving">
+                    @if (isSaving)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                        Saving...
+                    }
+                    else
+                    {
+                        Save Preferences
+                    }
+                </button>
+                <button class="btn btn-secondary" @onclick="ResetPreferences">Reset to Defaults</button>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+.preferences-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.preferences-form {
+    margin-top: 30px;
+}
+
+.card {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.card-title {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.form-label {
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.form-select {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 8px 12px;
+}
+
+.form-check {
+    padding-left: 0;
+}
+
+.form-check-input {
+    margin-left: 0;
+    margin-right: 8px;
+}
+
+.btn {
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-weight: 500;
+}
+</style>
+
+@code {
+    [Inject]
+    private IPreferencesService PreferencesService { get; set; } = null!;
+
+    private UserPreferences? preferences;
+    private string? errorMessage;
+    private string? successMessage;
+    private bool isLoading;
+    private bool isSaving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPreferences();
+    }
+
+    private async Task LoadPreferences()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            var (success, message, prefs) = await PreferencesService.GetPreferencesAsync();
+            if (success && prefs != null)
+            {
+                preferences = prefs;
+            }
+            else
+            {
+                errorMessage = message;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading preferences: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SavePreferences()
+    {
+        if (preferences == null)
+            return;
+
+        isSaving = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            var (success, message, updated) = await PreferencesService.UpdatePreferencesAsync(preferences);
+            if (success && updated != null)
+            {
+                preferences = updated;
+                successMessage = "Preferences saved successfully!";
+            }
+            else
+            {
+                errorMessage = message;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error saving preferences: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void ResetPreferences()
+    {
+        if (preferences != null)
+        {
+            preferences.Theme = "light";
+            preferences.Language = "en";
+            preferences.DarkMode = false;
+            preferences.NotificationsEnabled = true;
+            preferences.MessagePageSize = 20;
+        }
+    }
+}

@@ -21,7 +21,11 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(apiBaseU
 // Add services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+builder.Services.AddScoped<IPreferencesService, PreferencesService>();
+builder.Services.AddScoped<IConversationService, ConversationService>();
 builder.Services.AddScoped<IChatHubService>(sp => new ChatHubService(apiBaseUrl));
+builder.Services.AddLogging();
 
 var app = builder.Build();
 

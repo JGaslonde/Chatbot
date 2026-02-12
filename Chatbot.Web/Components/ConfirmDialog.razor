@@ -1,0 +1,74 @@
+@if (string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="modal-backdrop fade show" style="display: block;"></div>
+    <div class="modal fade show" style="display: block;" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@Title</h5>
+                    <button type="button" class="btn-close" @onclick="OnCancel"></button>
+                </div>
+                <div class="modal-body">
+                    @ChildContent
+                </div>
+                <div class="modal-footer">
+                    @if (!string.IsNullOrEmpty(ConfirmText))
+                    {
+                        <button type="button" class="btn btn-primary" @onclick="OnConfirm" disabled="@IsLoading">
+                            @if (IsLoading)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            }
+                            @ConfirmText
+                        </button>
+                    }
+                    <button type="button" class="btn btn-secondary" @onclick="OnCancel" disabled="@IsLoading">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = "Confirm";
+
+    [Parameter]
+    public string ConfirmText { get; set; } = "Confirm";
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public EventCallback OnConfirm { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public string? ErrorMessage { get; set; }
+}
+
+<style>
+.modal-backdrop.fade.show {
+    opacity: 0.5;
+}
+
+.modal.fade.show {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+</style>

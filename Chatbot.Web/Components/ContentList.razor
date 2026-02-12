@@ -1,0 +1,113 @@
+@if (IsLoading)
+{
+    <div class="text-center p-5">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3">@LoadingMessage</p>
+    </div>
+}
+else if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        <h4 class="alert-heading">Error</h4>
+        <p>@ErrorMessage</p>
+    </div>
+}
+else if (EmptyMessage != null && (Items == null || Items.Count == 0))
+{
+    <div class="alert alert-info" role="alert">
+        @EmptyMessage
+    </div>
+}
+else
+{
+    <div class="content-list">
+        @foreach (var item in Items ?? new List<ConversationResponse>())
+        {
+            <div class="list-item" @onclick="() => OnItemSelected?.InvokeAsync(item)">
+                <div class="item-header">
+                    <h6 class="item-title">@(item.Title ?? "Untitled Conversation")</h6>
+                    <small class="text-muted">@item.StartedAt.ToString("g")</small>
+                </div>
+                <div class="item-details">
+                    <span class="badge bg-secondary">@item.MessageCount messages</span>
+                    @if (!string.IsNullOrEmpty(item.Summary))
+                    {
+                        <p class="item-summary">@item.Summary</p>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public List<ConversationResponse>? Items { get; set; }
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public string LoadingMessage { get; set; } = "Loading...";
+
+    [Parameter]
+    public string? ErrorMessage { get; set; }
+
+    [Parameter]
+    public string? EmptyMessage { get; set; } = "No items found.";
+
+    [Parameter]
+    public EventCallback<ConversationResponse> OnItemSelected { get; set; }
+}
+
+<style>
+.content-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.list-item {
+    padding: 15px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.list-item:hover {
+    border-color: #007bff;
+    background-color: #f0f7ff;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
+}
+
+.item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+}
+
+.item-title {
+    margin: 0;
+    color: #333;
+}
+
+.item-details {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.item-summary {
+    margin: 8px 0 0 0;
+    font-size: 0.95em;
+    color: #666;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+</style>
