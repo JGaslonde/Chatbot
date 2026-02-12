@@ -27,6 +27,12 @@ public class ConversationAnalyticsService : IConversationAnalyticsService
         _userRepository = userRepository;
     }
 
+    /// <summary>
+    /// Gets conversation analytics for the specified user and date range.
+    /// NOTE: This method should always be called with a valid userId from the authenticated user's context.
+    /// The userId parameter is required - passing null would return analytics across all users, which should
+    /// only be allowed for admin users with appropriate authorization checks at the controller level.
+    /// </summary>
     public async Task<ConversationAnalytics> GetAnalyticsAsync(int? userId = null, DateTime? startDate = null, DateTime? endDate = null)
     {
         var start = startDate ?? DateTime.UtcNow.AddDays(-30);
@@ -35,6 +41,7 @@ public class ConversationAnalyticsService : IConversationAnalyticsService
         var messagesQuery = (await _messageRepository.GetAllAsync())
             .Where(m => m.SentAt >= start && m.SentAt <= end);
 
+        // Filter by user - should always be provided from authenticated context
         if (userId.HasValue)
         {
             var userConversationIds = (await _conversationRepository.GetAllAsync())

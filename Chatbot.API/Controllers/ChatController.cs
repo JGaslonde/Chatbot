@@ -199,8 +199,16 @@ public class ChatController : ControllerBase
     public async Task<IActionResult> ExportConversationJson(int id)
     {
         var userIdClaim = User.FindFirst("id")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim))
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             throw new UnauthorizedException("Invalid user token");
+
+        // Verify conversation exists and user owns it
+        var conversation = await _conversationService.GetConversationAsync(id);
+        if (conversation == null)
+            throw new NotFoundException($"Conversation {id} not found");
+        
+        if (conversation.UserId != userId)
+            throw new UnauthorizedException("Access denied to this conversation");
 
         var bytes = await _exportService.ExportToJsonBytesAsync(id);
         return File(bytes, "application/json", $"conversation_{id}_{DateTime.UtcNow:yyyyMMdd}.json");
@@ -210,8 +218,16 @@ public class ChatController : ControllerBase
     public async Task<IActionResult> ExportConversationCsv(int id)
     {
         var userIdClaim = User.FindFirst("id")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim))
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             throw new UnauthorizedException("Invalid user token");
+
+        // Verify conversation exists and user owns it
+        var conversation = await _conversationService.GetConversationAsync(id);
+        if (conversation == null)
+            throw new NotFoundException($"Conversation {id} not found");
+        
+        if (conversation.UserId != userId)
+            throw new UnauthorizedException("Access denied to this conversation");
 
         var bytes = await _exportService.ExportToCsvBytesAsync(id);
         return File(bytes, "text/csv", $"conversation_{id}_{DateTime.UtcNow:yyyyMMdd}.csv");
