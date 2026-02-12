@@ -1,4 +1,4 @@
-namespace Chatbot.Web.Models;
+namespace Chatbot.Core.Models;
 
 public record ChatMessageRequest(string Message, string? ConversationId = null);
 

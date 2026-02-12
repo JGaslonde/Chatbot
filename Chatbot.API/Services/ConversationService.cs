@@ -1,4 +1,4 @@
-using Chatbot.API.Models.Entities;
+using Chatbot.Core.Models.Entities;
 using Chatbot.API.Data;
 
 namespace Chatbot.API.Services;

@@ -98,21 +98,29 @@
                             <button class="btn btn-outline-primary w-100 mb-2" @onclick="ExportAllData" disabled="@isExporting">
                                 @if (isExporting)
                                 {
-                                    <span class="spinner-border spinner-border-sm me-2"></span><text>Exporting...</text>
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                
+                                    <text>Exporting...</text>
                                 }
                                 else
                                 {
-                                    <span class="bi bi-download me-2"></span><text>Export My Data</text>
+                                    <span class="bi bi-download me-2"></span>
+                                    
+                                    <text>Export My Data</text>
                                 }
                             </button>
                             <button class="btn btn-outline-danger w-100" @onclick="ShowDeleteConfirm" disabled="@isDeleting">
                                 @if (isDeleting)
                                 {
-                                    <span class="spinner-border spinner-border-sm me-2"></span><text>Deleting...</text>
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                
+                                    <text>Deleting...</text>
                                 }
                                 else
                                 {
-                                    <span class="bi bi-trash me-2"></span><text>Delete Account</text>
+                                    <span class="bi bi-trash me-2"></span>
+                                    
+                                    <text>Delete Account</text>
                                 }
                             </button>
                         </div>

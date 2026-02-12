@@ -1,6 +1,6 @@
 namespace Chatbot.Web.Services;
 
-using Chatbot.Web.Models;
+using Chatbot.Core.Models;
 
 /// <summary>
 /// Service interface for searching and filtering conversations and messages.

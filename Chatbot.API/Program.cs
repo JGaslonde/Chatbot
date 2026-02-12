@@ -6,7 +6,7 @@ using Chatbot.API.Data;
 using Chatbot.API.Services;
 using Chatbot.API.Middleware;
 using Chatbot.API.Hubs;
-using Chatbot.API.Models.Entities;
+using Chatbot.Core.Models.Entities;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Chatbot.API.Validators;

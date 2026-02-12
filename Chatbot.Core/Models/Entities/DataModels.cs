@@ -1,4 +1,4 @@
-namespace Chatbot.API.Models.Entities;
+namespace Chatbot.Core.Models.Entities;
 
 public class User
 {

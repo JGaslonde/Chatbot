@@ -22,7 +22,8 @@
                             @ConfirmText
                         </button>
                     }
-                    <button type="button" class="btn btn-secondary" @onclick="OnCancel" disabled="@IsLoading">Cancel</button>
+                    <button type="button" class="btn btn-secondary" @onclick="OnCancel"
+                            disabled="@IsLoading">Cancel</button>
                 </div>
             </div>
         </div>
@@ -53,22 +54,23 @@
 }
 
 <style>
-.modal-backdrop.fade.show {
-    opacity: 0.5;
-}
-
-.modal.fade.show {
-    animation: slideDown 0.3s ease-out;
-}
-
-@@keyframes slideDown {
-    from {
-        transform: translateY(-50px);
-        opacity: 0;
+    .modal-backdrop.fade.show {
+        opacity: 0.5;
     }
-    to {
-        transform: translateY(0);
-        opacity: 1;
+
+    .modal.fade.show {
+        animation: slideDown 0.3s ease-out;
     }
-}
+
+    @@keyframes slideDown {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
 </style>

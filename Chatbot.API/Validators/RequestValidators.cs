@@ -1,4 +1,4 @@
-using Chatbot.API.Models.Requests;
+using Chatbot.Core.Models;
 using FluentValidation;
 
 namespace Chatbot.API.Validators;

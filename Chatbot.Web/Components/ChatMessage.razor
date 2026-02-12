@@ -47,60 +47,61 @@
 }
 
 <style>
-.message-container {
-    margin: 10px 0;
-    padding: 12px;
-    border-radius: 8px;
-    animation: slideIn 0.3s ease-in;
-}
-
-@@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
+    .message-container {
+        margin: 10px 0;
+        padding: 12px;
+        border-radius: 8px;
+        animation: slideIn 0.3s ease-in;
     }
-    to {
-        opacity: 1;
-        transform: translateY(0);
+
+    @@keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
-}
 
-.message-container.user-message {
-    background-color: #007bff;
-    color: white;
-    margin-left: 40px;
-    border-radius: 12px 4px 12px 12px;
-}
+    .message-container.user-message {
+        background-color: #007bff;
+        color: white;
+        margin-left: 40px;
+        border-radius: 12px 4px 12px 12px;
+    }
 
-.message-container.bot-message {
-    background-color: #e9ecef;
-    color: black;
-    margin-right: 40px;
-    border-radius: 4px 12px 12px 12px;
-}
+    .message-container.bot-message {
+        background-color: #e9ecef;
+        color: black;
+        margin-right: 40px;
+        border-radius: 4px 12px 12px 12px;
+    }
 
-.message-header {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.85em;
-    margin-bottom: 5px;
-    opacity: 0.8;
-}
+    .message-header {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85em;
+        margin-bottom: 5px;
+        opacity: 0.8;
+    }
 
-.message-content {
-    margin: 5px 0;
-    word-wrap: break-word;
-}
+    .message-content {
+        margin: 5px 0;
+        word-wrap: break-word;
+    }
 
-.message-metadata {
-    margin-top: 8px;
-    display: flex;
-    gap: 5px;
-    flex-wrap: wrap;
-}
+    .message-metadata {
+        margin-top: 8px;
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+    }
 
-.badge {
-    font-size: 0.75em;
-    padding: 3px 6px;
-}
+    .badge {
+        font-size: 0.75em;
+        padding: 3px 6px;
+    }
 </style>

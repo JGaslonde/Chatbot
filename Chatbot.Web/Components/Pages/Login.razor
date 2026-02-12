@@ -23,19 +23,21 @@
         <form @onsubmit="HandleLogin">
             <div class="mb-3">
                 <label for="username" class="form-label">Username</label>
-                <input type="text" class="form-control" id="username" @bind="username"                    disabled="@isLoading"                    required                />
+                <input type="text" class="form-control" id="username" @bind="username" disabled="@isLoading" required />
             </div>
 
             <div class="mb-3">
                 <label for="password" class="form-label">Password</label>
-                <input type="password" class="form-control" id="password" @bind="password"                    disabled="@isLoading"
-                       required                />
+                <input type="password" class="form-control" id="password" @bind="password" disabled="@isLoading"
+                       required />
             </div>
 
             <button type="submit" class="btn btn-primary w-100" disabled="@isLoading">
                 @if (isLoading)
                 {
-                    <span class="spinner-border spinner-border-sm me-2"></span><text>Logging in...</text>
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                
+                    <text>Logging in...</text>
                 }
                 else
                 {
@@ -215,8 +217,7 @@
         animation: spinner-border 0.75s linear infinite;
     }
 
-    @@keyframes
-    spinner-border {
+    @@keyframes spinner-border {
         to {
             transform: rotate(360deg);
         }

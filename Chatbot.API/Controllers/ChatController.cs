@@ -2,9 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Chatbot.API.Services;
-using Chatbot.API.Models.Requests;
-using Chatbot.API.Models.Responses;
-using Chatbot.API.Models.Entities;
+using Chatbot.Core.Models;
+using Chatbot.Core.Models.Entities;
 using Chatbot.API.Exceptions;
 
 namespace Chatbot.API.Controllers;
