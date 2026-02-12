@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using Chatbot.API.Services;
 using Chatbot.API.Models.Requests;
 using Chatbot.API.Models.Responses;
@@ -9,6 +11,7 @@ namespace Chatbot.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize] // Protect all endpoints by default
 public class ChatController : ControllerBase
 {
     private readonly IConversationService _conversationService;
@@ -26,30 +29,39 @@ public class ChatController : ControllerBase
     }
 
     [HttpPost("register")]
+    [AllowAnonymous] // Allow unauthenticated access for registration
     public async Task<IActionResult> Register([FromBody] CreateUserRequest request)
     {
         var (success, token, message) = await _authService.RegisterAsync(request.Username, request.Email, request.Password);
         if (!success)
             throw new ConflictException(message);
 
-        return Ok(new ApiResponse<object>(true, message, new { token }));
+        // Get user for additional info in response
+        // Extract user ID from token (or get from auth service)
+        return Ok(new ApiResponse<AuthResponse>(true, message, 
+            new AuthResponse(token, request.Username, request.Email, DateTime.UtcNow.AddMinutes(1440))));
     }
 
     [HttpPost("login")]
+    [AllowAnonymous] // Allow unauthenticated access for login
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var (success, token, message) = await _authService.LoginAsync(request.Username, request.Password);
         if (!success)
             throw new UnauthorizedException(message);
 
-        return Ok(new ApiResponse<object>(true, message, new { token }));
+        return Ok(new ApiResponse<AuthResponse>(true, message, 
+            new AuthResponse(token, request.Username, "", DateTime.UtcNow.AddMinutes(1440))));
     }
 
     [HttpPost("conversations")]
     public async Task<IActionResult> StartConversation([FromBody] StartConversationRequest request)
     {
-        // In a real app, you would extract the user ID from the JWT token
-        var userId = 1; // Placeholder - should come from authenticated user
+        // Extract user ID from JWT token
+        var userIdClaim = User.FindFirst("id");
+        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            throw new UnauthorizedException("Invalid token");
+
         var conversation = await _conversationService.CreateConversationAsync(userId, request.Title);
 
         var response = new ConversationResponse(
@@ -115,6 +127,7 @@ public class ChatController : ControllerBase
     }
 
     [HttpGet("health")]
+    [AllowAnonymous] // Allow unauthenticated access for health checks
     public IActionResult Health()
     {
         return Ok(new HealthResponse("healthy", DateTime.UtcNow, "1.0.0"));
