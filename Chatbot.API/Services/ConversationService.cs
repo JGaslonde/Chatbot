@@ -37,13 +37,18 @@ public class ConversationService : IConversationService
 
     public async Task<Conversation> CreateConversationAsync(int userId, string? title = null)
     {
+        var user = await _conversationRepository.GetByIdAsync(userId);
+        if (user == null)
+            throw new InvalidOperationException("User not found");
+
         var conversation = new Conversation
         {
             UserId = userId,
             Title = title ?? $"Conversation {DateTime.UtcNow:yyyy-MM-dd HH:mm}",
             StartedAt = DateTime.UtcNow,
             LastMessageAt = DateTime.UtcNow,
-            IsActive = true
+            IsActive = true,
+            User = null!
         };
 
         return await _conversationRepository.AddAsync(conversation);

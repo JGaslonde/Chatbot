@@ -1,4 +1,5 @@
 using Chatbot.API.Models.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Chatbot.API.Data;
 

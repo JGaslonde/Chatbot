@@ -63,7 +63,7 @@ public class SimpleIntentRecognitionService : IIntentRecognitionService
     {
         var lower = text.ToLower();
         var words = lower.Split(new[] { ' ', ',', '.', '!', '?', ':' }, StringSplitOptions.RemoveEmptyEntries);
-        
+
         var intentScores = new Dictionary<string, int>();
 
         foreach (var intent in _intentPatterns.Keys)
