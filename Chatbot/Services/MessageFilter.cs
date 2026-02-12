@@ -72,8 +72,7 @@ public class MessageFilter
         // Check for excessive repetition (e.g., "aaaaaaa")
         for (int i = 0; i < message.Length - 4; i++)
         {
-            if (i + 4 < message.Length &&
-                message[i] == message[i + 1] &&
+            if (message[i] == message[i + 1] &&
                 message[i] == message[i + 2] &&
                 message[i] == message[i + 3] &&
                 message[i] == message[i + 4])

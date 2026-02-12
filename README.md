@@ -93,7 +93,7 @@ Filtered: False
 You: history
 === Recent Conversation History ===
 [16:20:00] User: Hello! [Sentiment: Neutral, Intent: greeting]
-[16:20:00] Assistant: Hi there! What's on your mind!
+[16:20:00] Assistant: Hi there! What's on your mind?
 [16:20:15] User: I love this chatbot! [Sentiment: VeryPositive, Intent: greeting]
 [16:20:15] Assistant: Glad I could assist you!
 ===================================
