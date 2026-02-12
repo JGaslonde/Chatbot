@@ -13,9 +13,18 @@ using Chatbot.API.Validators;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add database context
-builder.Services.AddDbContext<ChatbotDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ??
-    "Data Source=chatbot.db"));
+// Use InMemory database for testing if environment variable is set
+var useInMemoryDatabase = builder.Environment.EnvironmentName == "Testing";
+if (useInMemoryDatabase)
+{
+    // Will be overridden by test configuration
+}
+else
+{
+    builder.Services.AddDbContext<ChatbotDbContext>(options =>
+        options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ??
+        "Data Source=chatbot.db"));
+}
 
 // Add services to the container
 builder.Services.AddControllers();
@@ -113,7 +122,18 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ChatbotDbContext>();
-    db.Database.Migrate();
+    // Check if we're using InMemory database (for testing)
+    var databaseName = db.Database.ProviderName;
+    if (databaseName == "Microsoft.EntityFrameworkCore.InMemory")
+    {
+        // For InMemory database (testing), just ensure it's created
+        db.Database.EnsureCreated();
+    }
+    else
+    {
+        // For relational databases (SQLite, SQL Server, etc.), run migrations
+        db.Database.Migrate();
+    }
 }
 
 // Configure the HTTP request pipeline

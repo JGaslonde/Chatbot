@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,27 +22,24 @@ public class ChatApiIntegrationTests : IClassFixture<WebApplicationFactory<Progr
     {
         _factory = factory.WithWebHostBuilder(builder =>
         {
+            builder.UseEnvironment("Testing");
+            
             builder.ConfigureServices(services =>
             {
-                // Remove the existing DbContext registration
-                services.RemoveAll(typeof(DbContextOptions<ChatbotDbContext>));
-                services.RemoveAll(typeof(ChatbotDbContext));
-
                 // Add in-memory database for testing
                 services.AddDbContext<ChatbotDbContext>(options =>
                 {
                     options.UseInMemoryDatabase("TestDatabase_" + Guid.NewGuid().ToString());
                 });
-
-                // Ensure database is created
-                var sp = services.BuildServiceProvider();
-                using var scope = sp.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<ChatbotDbContext>();
-                db.Database.EnsureCreated();
             });
         });
 
         _client = _factory.CreateClient();
+        
+        // Ensure database is created
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ChatbotDbContext>();
+        db.Database.EnsureCreated();
     }
 
     [Fact]
