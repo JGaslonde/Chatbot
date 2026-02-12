@@ -11,33 +11,44 @@ public interface IConversationService
     Task<Message> AddMessageAsync(int conversationId, string content, MessageSender sender);
     Task<IEnumerable<Message>> GetConversationHistoryAsync(int conversationId);
     Task<bool> UpdateConversationAsync(int conversationId, string? title = null);
+    Task<string> GenerateBotResponseAsync(int conversationId, string userMessage);
+    Task UpdateConversationSummaryAsync(int conversationId);
 }
 
 public class ConversationService : IConversationService
 {
+    private readonly IUserRepository _userRepository;
     private readonly IConversationRepository _conversationRepository;
     private readonly IMessageRepository _messageRepository;
     private readonly ISentimentAnalysisService _sentimentService;
     private readonly IIntentRecognitionService _intentService;
     private readonly IMessageFilterService _filterService;
+    private readonly IResponseTemplateService _responseTemplateService;
+    private readonly IConversationSummarizationService _summarizationService;
 
     public ConversationService(
+        IUserRepository userRepository,
         IConversationRepository conversationRepository,
         IMessageRepository messageRepository,
         ISentimentAnalysisService sentimentService,
         IIntentRecognitionService intentService,
-        IMessageFilterService filterService)
+        IMessageFilterService filterService,
+        IResponseTemplateService responseTemplateService,
+        IConversationSummarizationService summarizationService)
     {
+        _userRepository = userRepository;
         _conversationRepository = conversationRepository;
         _messageRepository = messageRepository;
         _sentimentService = sentimentService;
         _intentService = intentService;
         _filterService = filterService;
+        _responseTemplateService = responseTemplateService;
+        _summarizationService = summarizationService;
     }
 
     public async Task<Conversation> CreateConversationAsync(int userId, string? title = null)
     {
-        var user = await _conversationRepository.GetByIdAsync(userId);
+        var user = await _userRepository.GetByIdAsync(userId);
         if (user == null)
             throw new InvalidOperationException("User not found");
 
@@ -120,5 +131,52 @@ public class ConversationService : IConversationService
 
         await _conversationRepository.UpdateAsync(conversation);
         return true;
+    }
+
+    public async Task<string> GenerateBotResponseAsync(int conversationId, string userMessage)
+    {
+        // Get conversation with recent messages
+        var conversation = await _conversationRepository.GetWithMessagesAsync(conversationId);
+        if (conversation == null)
+            throw new InvalidOperationException("Conversation not found");
+
+        // Get recent messages for context
+        var recentMessages = conversation.Messages
+            .OrderByDescending(m => m.SentAt)
+            .Take(10)
+            .OrderBy(m => m.SentAt)
+            .ToList();
+
+        // Analyze user message
+        var (sentiment, sentimentScore) = await _sentimentService.AnalyzeSentimentAsync(userMessage);
+        var (intent, intentConfidence) = await _intentService.RecognizeIntentAsync(userMessage);
+
+        // Generate context-aware response
+        var response = _responseTemplateService.GenerateContextAwareResponse(
+            userMessage, recentMessages, intent, sentiment);
+
+        return response;
+    }
+
+    public async Task UpdateConversationSummaryAsync(int conversationId)
+    {
+        var conversation = await _conversationRepository.GetWithMessagesAsync(conversationId);
+        if (conversation == null)
+            return;
+
+        var messages = conversation.Messages.OrderBy(m => m.SentAt).ToList();
+        
+        // Generate summary and title
+        var summary = _summarizationService.GenerateSummary(messages);
+        var title = _summarizationService.GenerateTitle(messages);
+
+        // Update conversation
+        conversation.Summary = summary;
+        if (string.IsNullOrWhiteSpace(conversation.Title) || conversation.Title.StartsWith("Conversation"))
+        {
+            conversation.Title = title;
+        }
+
+        await _conversationRepository.UpdateAsync(conversation);
     }
 }
