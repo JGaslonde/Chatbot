@@ -18,6 +18,7 @@ public class ChatController : ControllerBase
     private readonly IAuthenticationService _authService;
     private readonly IConversationAnalyticsService _analyticsService;
     private readonly IUserPreferencesService _preferencesService;
+    private readonly IConversationExportService _exportService;
     private readonly ILogger<ChatController> _logger;
 
     public ChatController(
@@ -25,12 +26,14 @@ public class ChatController : ControllerBase
         IAuthenticationService authService,
         IConversationAnalyticsService analyticsService,
         IUserPreferencesService preferencesService,
+        IConversationExportService exportService,
         ILogger<ChatController> logger)
     {
         _conversationService = conversationService;
         _authService = authService;
         _analyticsService = analyticsService;
         _preferencesService = preferencesService;
+        _exportService = exportService;
         _logger = logger;
     }
 
@@ -190,5 +193,27 @@ public class ChatController : ControllerBase
 
         var updated = await _preferencesService.UpdatePreferencesAsync(userId, preferences);
         return Ok(new ApiResponse<UserPreferences>(true, "Preferences updated successfully", updated));
+    }
+
+    [HttpGet("{id}/export/json")]
+    public async Task<IActionResult> ExportConversationJson(int id)
+    {
+        var userIdClaim = User.FindFirst("id")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim))
+            throw new UnauthorizedException("Invalid user token");
+
+        var bytes = await _exportService.ExportToJsonBytesAsync(id);
+        return File(bytes, "application/json", $"conversation_{id}_{DateTime.UtcNow:yyyyMMdd}.json");
+    }
+
+    [HttpGet("{id}/export/csv")]
+    public async Task<IActionResult> ExportConversationCsv(int id)
+    {
+        var userIdClaim = User.FindFirst("id")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim))
+            throw new UnauthorizedException("Invalid user token");
+
+        var bytes = await _exportService.ExportToCsvBytesAsync(id);
+        return File(bytes, "text/csv", $"conversation_{id}_{DateTime.UtcNow:yyyyMMdd}.csv");
     }
 }

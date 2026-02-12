@@ -3,6 +3,7 @@ using System;
 using Chatbot.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Chatbot.API.Migrations
 {
     [DbContext(typeof(ChatbotDbContext))]
-    partial class ChatbotDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260212173801_AddUserPreferencesAndNewFeatures")]
+    partial class AddUserPreferencesAndNewFeatures
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.1");

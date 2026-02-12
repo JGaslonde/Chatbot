@@ -6,6 +6,7 @@ using Chatbot.API.Data;
 using Chatbot.API.Services;
 using Chatbot.API.Middleware;
 using Chatbot.API.Hubs;
+using Chatbot.API.Models.Entities;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Chatbot.API.Validators;
@@ -84,6 +85,11 @@ builder.Services.AddSignalR();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IConversationRepository, ConversationRepository>();
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+// Register generic repositories for new entities
+builder.Services.AddScoped<Repository<Message>>();
+builder.Services.AddScoped<Repository<User>>();
+builder.Services.AddScoped<Repository<Conversation>>();
+builder.Services.AddScoped<Repository<UserPreferences>>();
 
 // Register application services
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
@@ -95,6 +101,7 @@ builder.Services.AddScoped<IResponseTemplateService, ResponseTemplateService>();
 builder.Services.AddScoped<IConversationSummarizationService, ConversationSummarizationService>();
 builder.Services.AddScoped<IConversationAnalyticsService, ConversationAnalyticsService>();
 builder.Services.AddScoped<IUserPreferencesService, UserPreferencesService>();
+builder.Services.AddScoped<IConversationExportService, ConversationExportService>();
 
 // Add CORS with SignalR support
 builder.Services.AddCors(options =>
