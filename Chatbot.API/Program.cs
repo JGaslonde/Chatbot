@@ -6,6 +6,7 @@ using Chatbot.API.Data;
 using Chatbot.API.Services;
 using Chatbot.API.Middleware;
 using Chatbot.API.Hubs;
+using Chatbot.API.Infrastructure;
 using Chatbot.Core.Models.Entities;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -55,7 +56,7 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
-    
+
     // Configure JWT authentication for SignalR
     options.Events = new JwtBearerEvents
     {
@@ -63,7 +64,7 @@ builder.Services.AddAuthentication(options =>
         {
             var accessToken = context.Request.Query["access_token"];
             var path = context.HttpContext.Request.Path;
-            
+
             // If the request is for our hub and has a token, use it
             if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/chat"))
             {
@@ -91,8 +92,16 @@ builder.Services.AddScoped<Repository<User>>();
 builder.Services.AddScoped<Repository<Conversation>>();
 builder.Services.AddScoped<Repository<UserPreferences>>();
 
+// Register infrastructure services (DRY and Dependency Inversion)
+builder.Services.AddScoped<IHttpContextAccessor, HttpContextAccessor>();
+builder.Services.AddScoped<IUserContextProvider, UserContextProvider>();
+builder.Services.AddScoped<IApiResponseBuilder, ApiResponseBuilder>();
+builder.Services.AddScoped<IConversationAccessControl, ConversationAccessControl>();
+builder.Services.AddScoped<IChatFacadeService, ChatFacadeService>();
+
 // Register application services
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.AddScoped<IMessageAnalyticsService, MessageAnalyticsService>();
 builder.Services.AddScoped<IConversationService, ConversationService>();
 builder.Services.AddScoped<ISentimentAnalysisService, SimpleSentimentAnalysisService>();
 builder.Services.AddScoped<IIntentRecognitionService, SimpleIntentRecognitionService>();
@@ -113,7 +122,7 @@ builder.Services.AddCors(options =>
                    .AllowAnyMethod()
                    .AllowAnyHeader();
         });
-    
+
     // Separate CORS policy for SignalR (allows credentials)
     options.AddPolicy("SignalRCors",
         policyBuilder =>

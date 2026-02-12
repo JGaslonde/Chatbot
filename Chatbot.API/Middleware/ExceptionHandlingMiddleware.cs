@@ -33,7 +33,7 @@ public class ExceptionHandlingMiddleware
         response.ContentType = "application/json";
 
         ApiResponse<object> apiResponse;
-        
+
         switch (exception)
         {
             case ValidationException validationEx:

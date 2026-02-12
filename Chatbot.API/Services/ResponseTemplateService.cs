@@ -57,10 +57,10 @@ public class ResponseTemplateService : IResponseTemplateService
         if (recentMessages.Count >= 2)
         {
             var lastTwoMessages = recentMessages.TakeLast(2).ToList();
-            
+
             // Check if user is repeatedly asking similar questions
-            if (lastTwoMessages.All(m => m.Sender == MessageSender.User && 
-                                        m.DetectedIntent == intent && 
+            if (lastTwoMessages.All(m => m.Sender == MessageSender.User &&
+                                        m.DetectedIntent == intent &&
                                         intent == "question"))
             {
                 return "I notice you have multiple questions. Let me help you systematically. What's your main concern?";
@@ -91,7 +91,7 @@ public class ResponseTemplateService : IResponseTemplateService
     {
         if (templates == null || templates.Count == 0)
             return "I understand. How can I help you further?";
-        
+
         return templates[_random.Next(templates.Count)];
     }
 

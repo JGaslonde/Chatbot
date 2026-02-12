@@ -1,75 +1,73 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 using Chatbot.API.Services;
 using Chatbot.Core.Models;
 using Chatbot.Core.Models.Entities;
 using Chatbot.API.Exceptions;
+using Chatbot.API.Infrastructure;
 
 namespace Chatbot.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
-[Authorize] // Protect all endpoints by default
-public class ChatController : ControllerBase
+/// <summary>
+/// Chat API controller with reduced dependencies via facade pattern.
+/// Implements single responsibility - delegates to specialized services via facade.
+/// Uses base controller class to reduce code duplication.
+/// </summary>
+[AllowAnonymous] // Override in specific endpoints
+public class ChatController : ApiControllerBase
 {
-    private readonly IConversationService _conversationService;
     private readonly IAuthenticationService _authService;
-    private readonly IConversationAnalyticsService _analyticsService;
-    private readonly IUserPreferencesService _preferencesService;
-    private readonly IConversationExportService _exportService;
-    private readonly ILogger<ChatController> _logger;
+    private readonly IChatFacadeService _chatFacade;
+    private readonly IConversationAccessControl _accessControl;
 
     public ChatController(
-        IConversationService conversationService,
         IAuthenticationService authService,
-        IConversationAnalyticsService analyticsService,
-        IUserPreferencesService preferencesService,
-        IConversationExportService exportService,
+        IChatFacadeService chatFacade,
+        IConversationAccessControl accessControl,
+        IUserContextProvider userContextProvider,
+        IApiResponseBuilder responseBuilder,
         ILogger<ChatController> logger)
+        : base(userContextProvider, responseBuilder, logger)
     {
-        _conversationService = conversationService;
         _authService = authService;
-        _analyticsService = analyticsService;
-        _preferencesService = preferencesService;
-        _exportService = exportService;
-        _logger = logger;
+        _chatFacade = chatFacade;
+        _accessControl = accessControl;
     }
 
     [HttpPost("register")]
-    [AllowAnonymous] // Allow unauthenticated access for registration
     public async Task<IActionResult> Register([FromBody] CreateUserRequest request)
     {
+        LogAction("Register", new { username = request.Username });
+
         var (success, token, message, user) = await _authService.RegisterAsync(request.Username, request.Email, request.Password);
         if (!success || user == null)
             throw new ConflictException(message);
 
-        return Ok(new ApiResponse<AuthResponse>(true, message, 
-            new AuthResponse(token, user.Username, user.Email, DateTime.UtcNow.AddMinutes(1440))));
+        var response = new AuthResponse(token, user.Username, user.Email, DateTime.UtcNow.AddMinutes(1440));
+        return Ok(response, message);
     }
 
     [HttpPost("login")]
-    [AllowAnonymous] // Allow unauthenticated access for login
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
+        LogAction("Login", new { username = request.Username });
+
         var (success, token, message, user) = await _authService.LoginAsync(request.Username, request.Password);
         if (!success || user == null)
             throw new UnauthorizedException(message);
 
-        return Ok(new ApiResponse<AuthResponse>(true, message, 
-            new AuthResponse(token, user.Username, user.Email, DateTime.UtcNow.AddMinutes(1440))));
+        var response = new AuthResponse(token, user.Username, user.Email, DateTime.UtcNow.AddMinutes(1440));
+        return Ok(response, message);
     }
 
     [HttpPost("conversations")]
+    [Authorize]
     public async Task<IActionResult> StartConversation([FromBody] StartConversationRequest request)
     {
-        // Extract user ID from JWT token
-        var userIdClaim = User.FindFirst("id");
-        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-            throw new UnauthorizedException("Invalid token");
+        var userId = CurrentUserId;
+        LogAction("CreateConversation", new { Title = request.Title });
 
-        var conversation = await _conversationService.CreateConversationAsync(userId, request.Title);
-
+        var conversation = await _chatFacade.CreateConversationAsync(userId, request.Title);
         var response = new ConversationResponse(
             conversation.Id,
             conversation.Title,
@@ -77,158 +75,121 @@ public class ChatController : ControllerBase
             0,
             conversation.Summary);
 
-        return Ok(new ApiResponse<ConversationResponse>(true, "Conversation started", response));
+        return Ok(response, "Conversation started");
     }
 
     [HttpPost("send")]
     [Route("{conversationId}/send")]
+    [Authorize]
     public async Task<IActionResult> SendMessage(int conversationId, [FromBody] ChatMessageRequest request)
     {
-        // Add user message
-        var message = await _conversationService.AddMessageAsync(conversationId, request.Message, MessageSender.User);
+        var userId = CurrentUserId;
+        LogAction("SendMessage", new { conversationId, messageLength = request.Message.Length });
 
-        // Generate intelligent bot response using new template service
-        var botResponseText = await _conversationService.GenerateBotResponseAsync(conversationId, request.Message);
-        var botMessage = await _conversationService.AddMessageAsync(conversationId, botResponseText, MessageSender.Bot);
+        await _accessControl.VerifyAccessAsync(conversationId, userId);
+        var response = await _chatFacade.SendMessageAsync(conversationId, request.Message);
 
-        // Update conversation summary periodically (every 5th message)
-        if (conversationId % 5 == 0)
-        {
-            await _conversationService.UpdateConversationSummaryAsync(conversationId);
-        }
-
-        var response = new ChatMessageResponse(
-            botMessage.Content,
-            botMessage.SentAt,
-            botMessage.DetectedIntent ?? "unknown",
-            botMessage.IntentConfidence,
-            botMessage.Sentiment.ToString(),
-            botMessage.SentimentScore,
-            conversationId);
-
-        return Ok(new ApiResponse<ChatMessageResponse>(true, "Message processed", response));
+        return Ok(response, "Message processed");
     }
 
     [HttpGet("{conversationId}/history")]
+    [Authorize]
     public async Task<IActionResult> GetHistory(int conversationId)
     {
-        var conversation = await _conversationService.GetConversationAsync(conversationId);
-        if (conversation == null)
-            throw new NotFoundException("Conversation", conversationId);
+        var userId = CurrentUserId;
+        LogAction("GetHistory", new { conversationId });
 
-        var messageDtos = conversation.Messages
-            .OrderBy(m => m.SentAt)
-            .Select(m => new MessageDto(
-                m.Id,
-                m.Content,
-                m.Sender.ToString(),
-                m.SentAt,
-                m.Sentiment.ToString(),
-                m.DetectedIntent,
-                m.SentimentScore))
-            .ToList();
+        await _accessControl.VerifyAccessAsync(conversationId, userId);
+        var response = await _chatFacade.GetConversationHistoryAsync(conversationId);
 
-        var response = new MessageHistoryResponse(conversationId, messageDtos);
-        return Ok(new ApiResponse<MessageHistoryResponse>(true, "History retrieved", response));
+        return Ok(response, "History retrieved");
     }
 
     [HttpGet("health")]
-    [AllowAnonymous] // Allow unauthenticated access for health checks
+    [AllowAnonymous]
     public IActionResult Health()
     {
-        return Ok(new HealthResponse("healthy", DateTime.UtcNow, "1.0.0"));
+        return base.Ok(new HealthResponse("healthy", DateTime.UtcNow, "1.0.0"));
     }
 
     [HttpGet("analytics")]
+    [Authorize]
     public async Task<IActionResult> GetAnalytics([FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
     {
-        var userIdClaim = User.FindFirst("id")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-            throw new UnauthorizedException("Invalid user token");
+        var userId = CurrentUserId;
+        LogAction("GetAnalytics", new { startDate, endDate });
 
-        var analytics = await _analyticsService.GetAnalyticsAsync(userId, startDate, endDate);
-        return Ok(new ApiResponse<ConversationAnalytics>(true, "Analytics retrieved successfully", analytics));
+        var analytics = await _chatFacade.GetAnalyticsAsync(userId, startDate, endDate);
+        return Ok(analytics, "Analytics retrieved successfully");
     }
 
     [HttpGet("analytics/sentiment-trends")]
+    [Authorize]
     public async Task<IActionResult> GetSentimentTrends([FromQuery] int days = 7)
     {
-        var userIdClaim = User.FindFirst("id")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-            throw new UnauthorizedException("Invalid user token");
+        var userId = CurrentUserId;
+        LogAction("GetSentimentTrends", new { days });
 
-        var trends = await _analyticsService.GetSentimentTrendsAsync(userId, days);
-        return Ok(new ApiResponse<List<SentimentTrend>>(true, "Sentiment trends retrieved successfully", trends));
+        var trends = await _chatFacade.GetSentimentTrendsAsync(userId, days);
+        return Ok(trends, "Sentiment trends retrieved successfully");
     }
 
     [HttpGet("analytics/intent-distribution")]
+    [Authorize]
     public async Task<IActionResult> GetIntentDistribution([FromQuery] int days = 30)
     {
-        var userIdClaim = User.FindFirst("id")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-            throw new UnauthorizedException("Invalid user token");
+        var userId = CurrentUserId;
+        LogAction("GetIntentDistribution", new { days });
 
-        var distribution = await _analyticsService.GetIntentDistributionAsync(userId, days);
-        return Ok(new ApiResponse<List<IntentDistribution>>(true, "Intent distribution retrieved successfully", distribution));
+        var distribution = await _chatFacade.GetIntentDistributionAsync(userId, days);
+        return Ok(distribution, "Intent distribution retrieved successfully");
     }
 
     [HttpGet("preferences")]
+    [Authorize]
     public async Task<IActionResult> GetPreferences()
     {
-        var userIdClaim = User.FindFirst("id")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-            throw new UnauthorizedException("Invalid user token");
+        var userId = CurrentUserId;
+        LogAction("GetPreferences");
 
-        var preferences = await _preferencesService.GetPreferencesAsync(userId);
-        return Ok(new ApiResponse<UserPreferences>(true, "Preferences retrieved successfully", preferences));
+        var preferences = await _chatFacade.GetPreferencesAsync(userId);
+        return Ok(preferences, "Preferences retrieved successfully");
     }
 
     [HttpPut("preferences")]
+    [Authorize]
     public async Task<IActionResult> UpdatePreferences([FromBody] UserPreferences preferences)
     {
-        var userIdClaim = User.FindFirst("id")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-            throw new UnauthorizedException("Invalid user token");
+        var userId = CurrentUserId;
+        LogAction("UpdatePreferences");
 
-        var updated = await _preferencesService.UpdatePreferencesAsync(userId, preferences);
-        return Ok(new ApiResponse<UserPreferences>(true, "Preferences updated successfully", updated));
+        var updated = await _chatFacade.UpdatePreferencesAsync(userId, preferences);
+        return Ok(updated, "Preferences updated successfully");
     }
 
     [HttpGet("{id}/export/json")]
+    [Authorize]
     public async Task<IActionResult> ExportConversationJson(int id)
     {
-        var userIdClaim = User.FindFirst("id")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-            throw new UnauthorizedException("Invalid user token");
+        var userId = CurrentUserId;
+        LogAction("ExportConversationJson", new { conversationId = id });
 
-        // Verify conversation exists and user owns it
-        var conversation = await _conversationService.GetConversationAsync(id);
-        if (conversation == null)
-            throw new NotFoundException($"Conversation {id} not found");
-        
-        if (conversation.UserId != userId)
-            throw new UnauthorizedException("Access denied to this conversation");
+        await _accessControl.VerifyAccessAsync(id, userId);
+        var bytes = await _chatFacade.ExportConversationJsonAsync(id);
 
-        var bytes = await _exportService.ExportToJsonBytesAsync(id);
         return File(bytes, "application/json", $"conversation_{id}_{DateTime.UtcNow:yyyyMMdd}.json");
     }
 
     [HttpGet("{id}/export/csv")]
+    [Authorize]
     public async Task<IActionResult> ExportConversationCsv(int id)
     {
-        var userIdClaim = User.FindFirst("id")?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-            throw new UnauthorizedException("Invalid user token");
+        var userId = CurrentUserId;
+        LogAction("ExportConversationCsv", new { conversationId = id });
 
-        // Verify conversation exists and user owns it
-        var conversation = await _conversationService.GetConversationAsync(id);
-        if (conversation == null)
-            throw new NotFoundException($"Conversation {id} not found");
-        
-        if (conversation.UserId != userId)
-            throw new UnauthorizedException("Access denied to this conversation");
+        await _accessControl.VerifyAccessAsync(id, userId);
+        var bytes = await _chatFacade.ExportConversationCsvAsync(id);
 
-        var bytes = await _exportService.ExportToCsvBytesAsync(id);
         return File(bytes, "text/csv", $"conversation_{id}_{DateTime.UtcNow:yyyyMMdd}.csv");
     }
 }

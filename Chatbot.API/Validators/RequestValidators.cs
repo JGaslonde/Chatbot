@@ -21,7 +21,7 @@ public class ChatMessageRequestValidator : AbstractValidator<ChatMessageRequest>
         // Check for excessive special characters
         var specialCharCount = message.Count(c => !char.IsLetterOrDigit(c) && !char.IsWhiteSpace(c));
         var ratio = (double)specialCharCount / message.Length;
-        
+
         return ratio <= 0.7; // Allow up to 70% special characters
     }
 }

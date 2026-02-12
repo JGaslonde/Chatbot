@@ -47,10 +47,10 @@ public class ConversationSummarizationService : IConversationSummarizationServic
 
         // Build summary
         var summary = $"Conversation with {totalMessages} messages ({userMessageCount} from user, {botMessageCount} from bot). ";
-        
+
         if (intentCounts.Any())
             summary += $"Main intents: {string.Join(", ", intentCounts)}. ";
-        
+
         summary += $"Overall sentiment: {sentimentTrend}. ";
         summary += $"Topics discussed: {topicsStr}.";
 
@@ -97,7 +97,7 @@ public class ConversationSummarizationService : IConversationSummarizationServic
         var truncated = TruncateForTitle(message);
         if (truncated.Contains('?'))
             return truncated;
-        
+
         return $"Question: {truncated}";
     }
 

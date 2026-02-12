@@ -18,12 +18,12 @@ public class AuthenticationServiceTests
     {
         _mockUserRepository = new Mock<IUserRepository>();
         _mockConfiguration = new Mock<IConfiguration>();
-        
+
         // Set up JWT configuration
         _mockConfiguration.Setup(c => c["Jwt:Key"]).Returns("test-secret-key-that-is-long-enough-for-security");
         _mockConfiguration.Setup(c => c["Jwt:Issuer"]).Returns("test-issuer");
         _mockConfiguration.Setup(c => c["Jwt:Audience"]).Returns("test-audience");
-        
+
         _service = new AuthenticationService(_mockUserRepository.Object, _mockConfiguration.Object);
     }
 
@@ -38,7 +38,7 @@ public class AuthenticationServiceTests
         _mockUserRepository
             .Setup(r => r.GetByUsernameAsync(username))
             .ReturnsAsync((User?)null);
-        
+
         _mockUserRepository
             .Setup(r => r.GetByEmailAsync(email))
             .ReturnsAsync((User?)null);
@@ -104,7 +104,7 @@ public class AuthenticationServiceTests
         _mockUserRepository
             .Setup(r => r.GetByUsernameAsync(username))
             .ReturnsAsync((User?)null);
-        
+
         _mockUserRepository
             .Setup(r => r.GetByEmailAsync(email))
             .ReturnsAsync(existingUser);

@@ -78,7 +78,7 @@ public class AuthenticationService : IAuthenticationService
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not configured"));
-            
+
             tokenHandler.ValidateToken(token, new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
@@ -93,7 +93,7 @@ public class AuthenticationService : IAuthenticationService
 
             var jwtToken = (JwtSecurityToken)validatedToken;
             var userId = int.Parse(jwtToken.Claims.First(x => x.Type == "id").Value);
-            
+
             return await _userRepository.GetByIdAsync(userId);
         }
         catch
@@ -106,13 +106,13 @@ public class AuthenticationService : IAuthenticationService
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not configured"));
-        
+
         // Parse expire minutes with proper error handling
         if (!double.TryParse(_configuration["Jwt:ExpireMinutes"], out double expireMinutes))
         {
             expireMinutes = 1440; // Default to 24 hours if parsing fails
         }
-        
+
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(new[]

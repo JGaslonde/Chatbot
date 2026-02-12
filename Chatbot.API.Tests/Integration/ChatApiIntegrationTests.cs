@@ -22,7 +22,7 @@ public class ChatApiIntegrationTests : IClassFixture<WebApplicationFactory<Progr
         _factory = factory.WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
-            
+
             builder.ConfigureServices(services =>
             {
                 // Add in-memory database for testing
@@ -34,7 +34,7 @@ public class ChatApiIntegrationTests : IClassFixture<WebApplicationFactory<Progr
         });
 
         _client = _factory.CreateClient();
-        
+
         // Ensure database is created
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ChatbotDbContext>();

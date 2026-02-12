@@ -20,30 +20,33 @@ public class ConversationService : IConversationService
     private readonly IUserRepository _userRepository;
     private readonly IConversationRepository _conversationRepository;
     private readonly IMessageRepository _messageRepository;
-    private readonly ISentimentAnalysisService _sentimentService;
-    private readonly IIntentRecognitionService _intentService;
-    private readonly IMessageFilterService _filterService;
+    private readonly IMessageAnalyticsService _messageAnalytics;
     private readonly IResponseTemplateService _responseTemplateService;
     private readonly IConversationSummarizationService _summarizationService;
+    private readonly ISentimentAnalysisService _sentimentService;
+    private readonly IIntentRecognitionService _intentService;
+    private readonly ILogger<ConversationService> _logger;
 
     public ConversationService(
         IUserRepository userRepository,
         IConversationRepository conversationRepository,
         IMessageRepository messageRepository,
+        IMessageAnalyticsService messageAnalytics,
+        IResponseTemplateService responseTemplateService,
+        IConversationSummarizationService summarizationService,
         ISentimentAnalysisService sentimentService,
         IIntentRecognitionService intentService,
-        IMessageFilterService filterService,
-        IResponseTemplateService responseTemplateService,
-        IConversationSummarizationService summarizationService)
+        ILogger<ConversationService> logger)
     {
         _userRepository = userRepository;
         _conversationRepository = conversationRepository;
         _messageRepository = messageRepository;
-        _sentimentService = sentimentService;
-        _intentService = intentService;
-        _filterService = filterService;
+        _messageAnalytics = messageAnalytics;
         _responseTemplateService = responseTemplateService;
         _summarizationService = summarizationService;
+        _sentimentService = sentimentService;
+        _intentService = intentService;
+        _logger = logger;
     }
 
     public async Task<Conversation> CreateConversationAsync(int userId, string? title = null)
@@ -77,31 +80,29 @@ public class ConversationService : IConversationService
 
     public async Task<Message> AddMessageAsync(int conversationId, string content, MessageSender sender)
     {
+        _logger.LogInformation("Adding message to conversation {ConversationId}. Sender: {Sender}", conversationId, sender);
+
         // Get conversation
         var conversation = await _conversationRepository.GetByIdAsync(conversationId);
         if (conversation == null)
             throw new InvalidOperationException("Conversation not found");
 
-        // Filter message
-        var (isClean, issues) = await _filterService.FilterMessageAsync(content);
-
-        // Analyze sentiment and intent
-        var (sentiment, sentimentScore) = await _sentimentService.AnalyzeSentimentAsync(content);
-        var (intent, intentConfidence) = await _intentService.RecognizeIntentAsync(content);
+        // Analyze message
+        var analysis = await _messageAnalytics.AnalyzeMessageAsync(content);
 
         // Create message
         var message = new Message
         {
             ConversationId = conversationId,
-            Content = isClean ? content : "[Filtered content]",
+            Content = analysis.CleanContent,
             Sender = sender,
             SentAt = DateTime.UtcNow,
-            Sentiment = sentiment,
-            SentimentScore = sentimentScore,
-            DetectedIntent = intent,
-            IntentConfidence = intentConfidence,
-            IsFiltered = !isClean,
-            FilterReason = issues.Count > 0 ? string.Join("; ", issues) : null,
+            Sentiment = analysis.Sentiment,
+            SentimentScore = analysis.SentimentScore,
+            DetectedIntent = analysis.Intent,
+            IntentConfidence = analysis.IntentConfidence,
+            IsFiltered = analysis.IsFiltered,
+            FilterReason = analysis.FilterReason,
             Conversation = conversation
         };
 
@@ -109,7 +110,7 @@ public class ConversationService : IConversationService
 
         // Update conversation
         conversation.LastMessageAt = DateTime.UtcNow;
-        conversation.Summary = $"Last message: {(isClean ? content : "[Filtered]")} ({sentiment})";
+        conversation.Summary = $"Last message: {analysis.CleanContent} ({analysis.Sentiment})";
         await _conversationRepository.UpdateAsync(conversation);
 
         return message;
@@ -135,6 +136,8 @@ public class ConversationService : IConversationService
 
     public async Task<string> GenerateBotResponseAsync(int conversationId, string userMessage)
     {
+        _logger.LogInformation("Generating bot response for conversation {ConversationId}", conversationId);
+
         // Get conversation with recent messages
         var conversation = await _conversationRepository.GetWithMessagesAsync(conversationId);
         if (conversation == null)
@@ -148,12 +151,11 @@ public class ConversationService : IConversationService
             .ToList();
 
         // Analyze user message
-        var (sentiment, sentimentScore) = await _sentimentService.AnalyzeSentimentAsync(userMessage);
-        var (intent, intentConfidence) = await _intentService.RecognizeIntentAsync(userMessage);
+        var analysis = await _messageAnalytics.AnalyzeMessageAsync(userMessage);
 
         // Generate context-aware response
         var response = _responseTemplateService.GenerateContextAwareResponse(
-            userMessage, recentMessages, intent, sentiment);
+            userMessage, recentMessages, analysis.Intent ?? "unknown", analysis.Sentiment);
 
         return response;
     }
@@ -165,7 +167,7 @@ public class ConversationService : IConversationService
             return;
 
         var messages = conversation.Messages.OrderBy(m => m.SentAt).ToList();
-        
+
         // Generate summary and title
         var summary = _summarizationService.GenerateSummary(messages);
         var title = _summarizationService.GenerateTitle(messages);

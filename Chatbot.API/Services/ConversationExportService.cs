@@ -78,7 +78,7 @@ public class ConversationExportService : IConversationExportService
             .ToList();
 
         var csv = new StringBuilder();
-        
+
         // Header
         csv.AppendLine("MessageId,Sender,Content,SentAt,Sentiment,SentimentScore,DetectedIntent,IntentConfidence");
 
@@ -89,7 +89,7 @@ public class ConversationExportService : IConversationExportService
             var sentAt = message.SentAt.ToString("o");
             var sentiment = message.Sentiment.ToString();
             var intent = message.DetectedIntent ?? "";
-            
+
             csv.AppendLine($"{message.Id},{message.Sender},{content},{sentAt},{sentiment},{message.SentimentScore},{intent},{message.IntentConfidence}");
         }
 

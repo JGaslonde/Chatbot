@@ -35,7 +35,7 @@ public class ChatHub : Hub
     {
         await Groups.AddToGroupAsync(Context.ConnectionId, $"conversation_{conversationId}");
         _logger.LogInformation("Connection {ConnectionId} joined conversation {ConversationId}", Context.ConnectionId, conversationId);
-        
+
         // Notify others in the conversation
         await Clients.OthersInGroup($"conversation_{conversationId}")
             .SendAsync("UserJoined", Context.User?.Identity?.Name ?? "Anonymous");
@@ -45,7 +45,7 @@ public class ChatHub : Hub
     {
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"conversation_{conversationId}");
         _logger.LogInformation("Connection {ConnectionId} left conversation {ConversationId}", Context.ConnectionId, conversationId);
-        
+
         // Notify others in the conversation
         await Clients.OthersInGroup($"conversation_{conversationId}")
             .SendAsync("UserLeft", Context.User?.Identity?.Name ?? "Anonymous");

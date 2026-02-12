@@ -38,7 +38,7 @@ public class AuthService : IAuthService
                 if (result?.Success == true && result.Data != null)
                 {
                     _token = result.Data.Token;
-                    _httpClient.DefaultRequestHeaders.Authorization = 
+                    _httpClient.DefaultRequestHeaders.Authorization =
                         new AuthenticationHeaderValue("Bearer", _token);
                     _authStateProvider.MarkUserAsAuthenticated(result.Data.Username, _token);
                     return (true, result.Message, _token);
@@ -67,7 +67,7 @@ public class AuthService : IAuthService
                 if (result?.Success == true && result.Data != null)
                 {
                     _token = result.Data.Token;
-                    _httpClient.DefaultRequestHeaders.Authorization = 
+                    _httpClient.DefaultRequestHeaders.Authorization =
                         new AuthenticationHeaderValue("Bearer", _token);
                     _authStateProvider.MarkUserAsAuthenticated(result.Data.Username, _token);
                     return (true, result.Message, _token);
@@ -92,6 +92,6 @@ public class AuthService : IAuthService
     }
 
     public string? GetToken() => _token;
-    
+
     public bool IsAuthenticated() => !string.IsNullOrEmpty(_token);
 }
