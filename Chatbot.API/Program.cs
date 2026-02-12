@@ -6,6 +6,7 @@ using Chatbot.API.Data;
 using Chatbot.API.Services;
 using Chatbot.API.Middleware;
 using Chatbot.API.Hubs;
+using Chatbot.API.Models.Entities;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Chatbot.API.Validators;
@@ -13,9 +14,18 @@ using Chatbot.API.Validators;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add database context
-builder.Services.AddDbContext<ChatbotDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ??
-    "Data Source=chatbot.db"));
+// Use InMemory database for testing if environment variable is set
+var useInMemoryDatabase = builder.Environment.EnvironmentName == "Testing";
+if (useInMemoryDatabase)
+{
+    // Will be overridden by test configuration
+}
+else
+{
+    builder.Services.AddDbContext<ChatbotDbContext>(options =>
+        options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ??
+        "Data Source=chatbot.db"));
+}
 
 // Add services to the container
 builder.Services.AddControllers();
@@ -75,6 +85,11 @@ builder.Services.AddSignalR();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IConversationRepository, ConversationRepository>();
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+// Register generic repositories for new entities
+builder.Services.AddScoped<Repository<Message>>();
+builder.Services.AddScoped<Repository<User>>();
+builder.Services.AddScoped<Repository<Conversation>>();
+builder.Services.AddScoped<Repository<UserPreferences>>();
 
 // Register application services
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
@@ -84,6 +99,9 @@ builder.Services.AddScoped<IIntentRecognitionService, SimpleIntentRecognitionSer
 builder.Services.AddScoped<IMessageFilterService, MessageFilterService>();
 builder.Services.AddScoped<IResponseTemplateService, ResponseTemplateService>();
 builder.Services.AddScoped<IConversationSummarizationService, ConversationSummarizationService>();
+builder.Services.AddScoped<IConversationAnalyticsService, ConversationAnalyticsService>();
+builder.Services.AddScoped<IUserPreferencesService, UserPreferencesService>();
+builder.Services.AddScoped<IConversationExportService, ConversationExportService>();
 
 // Add CORS with SignalR support
 builder.Services.AddCors(options =>
@@ -113,7 +131,18 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ChatbotDbContext>();
-    db.Database.Migrate();
+    // Check if we're using InMemory database (for testing)
+    var databaseName = db.Database.ProviderName;
+    if (databaseName == "Microsoft.EntityFrameworkCore.InMemory")
+    {
+        // For InMemory database (testing), just ensure it's created
+        db.Database.EnsureCreated();
+    }
+    else
+    {
+        // For relational databases (SQLite, SQL Server, etc.), run migrations
+        db.Database.Migrate();
+    }
 }
 
 // Configure the HTTP request pipeline

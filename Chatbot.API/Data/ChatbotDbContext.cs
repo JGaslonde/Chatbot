@@ -13,6 +13,7 @@ public class ChatbotDbContext : DbContext
     public DbSet<User> Users { get; set; } = null!;
     public DbSet<Conversation> Conversations { get; set; } = null!;
     public DbSet<Message> Messages { get; set; } = null!;
+    public DbSet<UserPreferences> UserPreferences { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -31,6 +32,13 @@ public class ChatbotDbContext : DbContext
             .HasMany(u => u.Conversations)
             .WithOne(c => c.User)
             .HasForeignKey(c => c.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // UserPreferences configuration
+        modelBuilder.Entity<UserPreferences>()
+            .HasOne(p => p.User)
+            .WithOne(u => u.Preferences)
+            .HasForeignKey<UserPreferences>(p => p.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // Conversation configuration

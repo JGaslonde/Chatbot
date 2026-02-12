@@ -62,6 +62,9 @@ public class AuthenticationService : IAuthenticationService
         if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
             return (false, "", "Invalid credentials", null);
 
+        if (!user.IsActive)
+            return (false, "", "Account is inactive", null);
+
         user.LastActive = DateTime.UtcNow;
         await _userRepository.UpdateAsync(user);
 

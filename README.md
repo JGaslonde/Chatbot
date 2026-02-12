@@ -239,8 +239,14 @@ Chatbot/
 - ✅ **Real-Time WebSockets** - SignalR for instant messaging and typing indicators
 - ✅ **Docker Containerization** - Production-ready deployment with Docker Compose
 
+#### New Features (February 2026 - Phase 3) 🎉
+- ✅ **Conversation Analytics** - Track metrics, sentiment trends, and intent distribution
+- ✅ **User Preferences** - Personalization with display, notification, and privacy settings
+- ✅ **Conversation Export** - Export chat history to JSON and CSV formats
+
 📖 **See [NEW_FEATURES.md](NEW_FEATURES.md) for Phase 1 features (2026-02-11)**  
-📖 **See [NEW_FEATURES_2026.md](NEW_FEATURES_2026.md) for Phase 2 features (2026-02-12)**
+📖 **See [NEW_FEATURES_2026.md](NEW_FEATURES_2026.md) for Phase 2 features (2026-02-12)**  
+📖 **See [NEW_FEATURES_PHASE3.md](NEW_FEATURES_PHASE3.md) for Phase 3 features (2026-02-12)**
 
 ## Customization Points
 
