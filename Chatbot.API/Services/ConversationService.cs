@@ -17,6 +17,7 @@ public interface IConversationService
 
 public class ConversationService : IConversationService
 {
+    private readonly IUserRepository _userRepository;
     private readonly IConversationRepository _conversationRepository;
     private readonly IMessageRepository _messageRepository;
     private readonly ISentimentAnalysisService _sentimentService;
@@ -26,6 +27,7 @@ public class ConversationService : IConversationService
     private readonly IConversationSummarizationService _summarizationService;
 
     public ConversationService(
+        IUserRepository userRepository,
         IConversationRepository conversationRepository,
         IMessageRepository messageRepository,
         ISentimentAnalysisService sentimentService,
@@ -34,6 +36,7 @@ public class ConversationService : IConversationService
         IResponseTemplateService responseTemplateService,
         IConversationSummarizationService summarizationService)
     {
+        _userRepository = userRepository;
         _conversationRepository = conversationRepository;
         _messageRepository = messageRepository;
         _sentimentService = sentimentService;
@@ -45,7 +48,7 @@ public class ConversationService : IConversationService
 
     public async Task<Conversation> CreateConversationAsync(int userId, string? title = null)
     {
-        var user = await _conversationRepository.GetByIdAsync(userId);
+        var user = await _userRepository.GetByIdAsync(userId);
         if (user == null)
             throw new InvalidOperationException("User not found");
 
