@@ -9,8 +9,8 @@ namespace Chatbot.API.Services;
 
 public interface IAuthenticationService
 {
-    Task<(bool Success, string Token, string Message)> RegisterAsync(string username, string email, string password);
-    Task<(bool Success, string Token, string Message)> LoginAsync(string username, string password);
+    Task<(bool Success, string Token, string Message, User? User)> RegisterAsync(string username, string email, string password);
+    Task<(bool Success, string Token, string Message, User? User)> LoginAsync(string username, string password);
     Task<User?> ValidateTokenAsync(string token);
     string GenerateToken(User user);
 }
@@ -26,16 +26,16 @@ public class AuthenticationService : IAuthenticationService
         _configuration = configuration;
     }
 
-    public async Task<(bool Success, string Token, string Message)> RegisterAsync(string username, string email, string password)
+    public async Task<(bool Success, string Token, string Message, User? User)> RegisterAsync(string username, string email, string password)
     {
         // Check if user already exists
         var existingUser = await _userRepository.GetByUsernameAsync(username);
         if (existingUser != null)
-            return (false, "", "Username already exists");
+            return (false, "", "Username already exists", null);
 
         var existingEmail = await _userRepository.GetByEmailAsync(email);
         if (existingEmail != null)
-            return (false, "", "Email already exists");
+            return (false, "", "Email already exists", null);
 
         // Create new user
         var user = new User
@@ -50,23 +50,23 @@ public class AuthenticationService : IAuthenticationService
 
         await _userRepository.AddAsync(user);
         var token = GenerateToken(user);
-        return (true, token, "User registered successfully");
+        return (true, token, "User registered successfully", user);
     }
 
-    public async Task<(bool Success, string Token, string Message)> LoginAsync(string username, string password)
+    public async Task<(bool Success, string Token, string Message, User? User)> LoginAsync(string username, string password)
     {
         var user = await _userRepository.GetByUsernameAsync(username);
         if (user == null)
-            return (false, "", "Invalid credentials");
+            return (false, "", "Invalid credentials", null);
 
         if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
-            return (false, "", "Invalid credentials");
+            return (false, "", "Invalid credentials", null);
 
         user.LastActive = DateTime.UtcNow;
         await _userRepository.UpdateAsync(user);
 
         var token = GenerateToken(user);
-        return (true, token, "Login successful");
+        return (true, token, "Login successful", user);
     }
 
     public async Task<User?> ValidateTokenAsync(string token)
@@ -104,6 +104,12 @@ public class AuthenticationService : IAuthenticationService
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not configured"));
         
+        // Parse expire minutes with proper error handling
+        if (!double.TryParse(_configuration["Jwt:ExpireMinutes"], out double expireMinutes))
+        {
+            expireMinutes = 1440; // Default to 24 hours if parsing fails
+        }
+        
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(new[]
@@ -113,7 +119,7 @@ public class AuthenticationService : IAuthenticationService
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             }),
-            Expires = DateTime.UtcNow.AddMinutes(double.Parse(_configuration["Jwt:ExpireMinutes"] ?? "1440")),
+            Expires = DateTime.UtcNow.AddMinutes(expireMinutes),
             Issuer = _configuration["Jwt:Issuer"],
             Audience = _configuration["Jwt:Audience"],
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)

@@ -32,26 +32,24 @@ public class ChatController : ControllerBase
     [AllowAnonymous] // Allow unauthenticated access for registration
     public async Task<IActionResult> Register([FromBody] CreateUserRequest request)
     {
-        var (success, token, message) = await _authService.RegisterAsync(request.Username, request.Email, request.Password);
-        if (!success)
+        var (success, token, message, user) = await _authService.RegisterAsync(request.Username, request.Email, request.Password);
+        if (!success || user == null)
             throw new ConflictException(message);
 
-        // Get user for additional info in response
-        // Extract user ID from token (or get from auth service)
         return Ok(new ApiResponse<AuthResponse>(true, message, 
-            new AuthResponse(token, request.Username, request.Email, DateTime.UtcNow.AddMinutes(1440))));
+            new AuthResponse(token, user.Username, user.Email, DateTime.UtcNow.AddMinutes(1440))));
     }
 
     [HttpPost("login")]
     [AllowAnonymous] // Allow unauthenticated access for login
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var (success, token, message) = await _authService.LoginAsync(request.Username, request.Password);
-        if (!success)
+        var (success, token, message, user) = await _authService.LoginAsync(request.Username, request.Password);
+        if (!success || user == null)
             throw new UnauthorizedException(message);
 
         return Ok(new ApiResponse<AuthResponse>(true, message, 
-            new AuthResponse(token, request.Username, "", DateTime.UtcNow.AddMinutes(1440))));
+            new AuthResponse(token, user.Username, user.Email, DateTime.UtcNow.AddMinutes(1440))));
     }
 
     [HttpPost("conversations")]
