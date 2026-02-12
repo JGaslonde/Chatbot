@@ -1,7 +1,8 @@
 using Chatbot.Core.Models.Entities;
+using Chatbot.API.Data.Context;
 using Microsoft.EntityFrameworkCore;
 
-namespace Chatbot.API.Data;
+namespace Chatbot.API.Data.Repositories;
 
 public interface IRepository<T> where T : class
 {

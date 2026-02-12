@@ -1,7 +1,8 @@
 using Chatbot.API.Exceptions;
-using Chatbot.API.Services;
+using Chatbot.API.Infrastructure.Auth;
+using Microsoft.Extensions.Logging;
 
-namespace Chatbot.API.Infrastructure;
+namespace Chatbot.API.Infrastructure.Validation;
 
 /// <summary>
 /// Provides utility methods for common validation operations.

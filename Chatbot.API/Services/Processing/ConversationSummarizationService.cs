@@ -1,6 +1,6 @@
 using Chatbot.Core.Models.Entities;
 
-namespace Chatbot.API.Services;
+namespace Chatbot.API.Services.Processing;
 
 public interface IConversationSummarizationService
 {

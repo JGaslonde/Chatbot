@@ -1,6 +1,8 @@
 using Chatbot.Core.Models.Entities;
+using Chatbot.API.Services.Processing;
+using Microsoft.Extensions.Logging;
 
-namespace Chatbot.API.Services;
+namespace Chatbot.API.Services.Analysis;
 
 /// <summary>
 /// Handles message analysis operations (sentiment, intent, filtering).

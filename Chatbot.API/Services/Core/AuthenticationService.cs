@@ -1,11 +1,11 @@
 using Chatbot.Core.Models.Entities;
-using Chatbot.API.Data;
+using Chatbot.API.Data.Repositories;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace Chatbot.API.Services;
+namespace Chatbot.API.Services.Core;
 
 public interface IAuthenticationService
 {

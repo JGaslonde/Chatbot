@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Xunit;
 using FluentAssertions;
-using Chatbot.API.Data;
+using Chatbot.API.Data.Context;
 using Chatbot.Core.Models;
 
 namespace Chatbot.API.Tests.Integration;

@@ -1,12 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Chatbot.API.Services;
+using Chatbot.API.Services.Core;
 using Chatbot.Core.Models;
 using Chatbot.Core.Models.Entities;
 using Chatbot.API.Exceptions;
-using Chatbot.API.Infrastructure;
+using Chatbot.API.Infrastructure.Auth;
+using Chatbot.API.Infrastructure.Authorization;
+using Chatbot.API.Infrastructure.Facades;
+using Chatbot.API.Infrastructure.Http;
 
-namespace Chatbot.API.Controllers;
+namespace Chatbot.API.Controllers.Chat;
 
 /// <summary>
 /// Chat API controller with reduced dependencies via facade pattern.

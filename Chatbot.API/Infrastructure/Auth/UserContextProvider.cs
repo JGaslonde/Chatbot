@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using Chatbot.API.Exceptions;
 
-namespace Chatbot.API.Infrastructure;
+namespace Chatbot.API.Infrastructure.Auth;
 
 /// <summary>
 /// Provides user context extraction from HTTP context.

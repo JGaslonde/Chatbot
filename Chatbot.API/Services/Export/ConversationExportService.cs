@@ -1,9 +1,9 @@
 using System.Text;
 using System.Text.Json;
-using Chatbot.API.Data;
+using Chatbot.API.Data.Repositories;
 using Chatbot.Core.Models.Entities;
 
-namespace Chatbot.API.Services;
+namespace Chatbot.API.Services.Export;
 
 public interface IConversationExportService
 {

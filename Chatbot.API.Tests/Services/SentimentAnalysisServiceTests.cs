@@ -1,6 +1,6 @@
 using Xunit;
 using FluentAssertions;
-using Chatbot.API.Services;
+using Chatbot.API.Services.Analysis;
 
 namespace Chatbot.API.Tests.Services;
 

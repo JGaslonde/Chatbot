@@ -1,8 +1,10 @@
-using Chatbot.API.Services;
+using Chatbot.API.Services.Core;
+using Chatbot.API.Services.Analytics;
+using Chatbot.API.Services.Export;
 using Chatbot.Core.Models;
 using Chatbot.Core.Models.Entities;
 
-namespace Chatbot.API.Infrastructure;
+namespace Chatbot.API.Infrastructure.Facades;
 
 /// <summary>
 /// Facade service that coordinates multiple specialized services.

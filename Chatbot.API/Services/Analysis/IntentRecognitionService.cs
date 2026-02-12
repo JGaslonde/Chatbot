@@ -1,4 +1,4 @@
-namespace Chatbot.API.Services;
+namespace Chatbot.API.Services.Analysis;
 
 public interface IIntentRecognitionService
 {

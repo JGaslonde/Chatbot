@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authorization;
-using Chatbot.API.Services;
+using Chatbot.API.Services.Core;
 using Chatbot.Core.Models.Entities;
 
 namespace Chatbot.API.Hubs;

@@ -1,7 +1,7 @@
 using Chatbot.API.Exceptions;
-using Chatbot.API.Services;
+using Chatbot.API.Services.Core;
 
-namespace Chatbot.API.Infrastructure;
+namespace Chatbot.API.Infrastructure.Authorization;
 
 /// <summary>
 /// Handles conversation access control and authorization checks.

@@ -1,7 +1,7 @@
-using Chatbot.API.Data;
+using Chatbot.API.Data.Repositories;
 using Chatbot.API.Exceptions;
 
-namespace Chatbot.API.Infrastructure;
+namespace Chatbot.API.Infrastructure.Repository;
 
 /// <summary>
 /// Generic service for repository operations with built-in error handling.
@@ -30,7 +30,7 @@ public class RepositoryService<T> : IRepositoryService<T> where T : class
     public async Task<T> GetByIdOrThrowAsync(int id, string entityName)
     {
         _logger.LogInformation("Retrieving {EntityName} with ID: {Id}", entityName, id);
-        
+
         var entity = await _repository.GetByIdAsync(id);
         if (entity == null)
         {

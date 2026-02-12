@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Chatbot.Core.Models.Entities;
 
-namespace Chatbot.API.Data;
+namespace Chatbot.API.Data.Context;
 
 public class ChatbotDbContext : DbContext
 {

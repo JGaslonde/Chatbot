@@ -1,8 +1,8 @@
-using Chatbot.API.Data;
+using Chatbot.API.Data.Repositories;
 using Chatbot.Core.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace Chatbot.API.Services;
+namespace Chatbot.API.Services.Core;
 
 public interface IUserPreferencesService
 {

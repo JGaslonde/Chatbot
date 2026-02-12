@@ -2,8 +2,8 @@ using Xunit;
 using FluentAssertions;
 using Moq;
 using Microsoft.Extensions.Configuration;
-using Chatbot.API.Services;
-using Chatbot.API.Data;
+using Chatbot.API.Services.Core;
+using Chatbot.API.Data.Repositories;
 using Chatbot.Core.Models.Entities;
 
 namespace Chatbot.API.Tests.Services;

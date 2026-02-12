@@ -1,6 +1,6 @@
 using Chatbot.Core.Models;
 
-namespace Chatbot.API.Infrastructure;
+namespace Chatbot.API.Infrastructure.Http;
 
 /// <summary>
 /// Provides consistent API response formatting.

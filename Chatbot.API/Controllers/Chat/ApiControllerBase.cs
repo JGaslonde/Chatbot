@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Chatbot.API.Infrastructure;
+using Chatbot.API.Infrastructure.Auth;
+using Chatbot.API.Infrastructure.Http;
 using Chatbot.Core.Models;
 
-namespace Chatbot.API.Controllers;
+namespace Chatbot.API.Controllers.Chat;
 
 /// <summary>
 /// Base controller providing common functionality for all API controllers.
