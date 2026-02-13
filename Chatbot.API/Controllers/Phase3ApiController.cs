@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using Chatbot.API.Services.Phase3.Interfaces;
 using Chatbot.Core.Models.Requests;
 using Chatbot.Core.Models.Responses;
@@ -21,6 +22,15 @@ public class AnalyticsController : ControllerBase
     {
         _analyticsService = analyticsService;
         _logger = logger;
+    }
+
+    /// <summary>
+    /// Extract userId from JWT claims
+    /// </summary>
+    private int GetUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return int.TryParse(userIdClaim, out var userId) ? userId : 0;
     }
 
     /// <summary>
@@ -52,8 +62,7 @@ public class AnalyticsController : ControllerBase
     {
         try
         {
-            // TODO: Get userId from claims
-            var userId = 1;
+            var userId = GetUserId();
             var summary = await _analyticsService.GetAnalyticsSummaryAsync(userId, days);
             return Ok(summary);
         }
@@ -72,8 +81,7 @@ public class AnalyticsController : ControllerBase
     {
         try
         {
-            // TODO: Get userId from claims
-            var userId = 1;
+            var userId = GetUserId();
             var avgSentiment = await _analyticsService.GetAverageSentimentAsync(userId, days);
             return Ok(new { avgSentiment });
         }
@@ -94,8 +102,7 @@ public class AnalyticsController : ControllerBase
     {
         try
         {
-            // TODO: Get userId from claims
-            var userId = 1;
+            var userId = GetUserId();
             var analytics = await _analyticsService.GetUserAnalyticsByDateRangeAsync(userId, startDate, endDate);
             return Ok(analytics);
         }
@@ -116,8 +123,7 @@ public class AnalyticsController : ControllerBase
     {
         try
         {
-            // TODO: Get userId from claims
-            var userId = 1;
+            var userId = GetUserId();
             var analytics = await _analyticsService.CreateOrUpdateAnalyticsAsync(conversationId, userId, request);
             return CreatedAtAction(nameof(GetConversationAnalytics), new { conversationId = analytics.Id }, analytics);
         }
@@ -147,6 +153,15 @@ public class InsightsController : ControllerBase
     }
 
     /// <summary>
+    /// Extract userId from JWT claims
+    /// </summary>
+    private int GetUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return int.TryParse(userIdClaim, out var userId) ? userId : 0;
+    }
+
+    /// <summary>
     /// Get all ML insights for user
     /// </summary>
     [HttpGet]
@@ -154,8 +169,7 @@ public class InsightsController : ControllerBase
     {
         try
         {
-            // TODO: Get userId from claims
-            var userId = 1;
+            var userId = GetUserId();
             var insights = await _insightService.GetUserInsightsAsync(userId);
             return Ok(insights);
         }
@@ -174,8 +188,7 @@ public class InsightsController : ControllerBase
     {
         try
         {
-            // TODO: Get userId from claims
-            var userId = 1;
+            var userId = GetUserId();
             var insights = await _insightService.GetByInsightTypeAsync(userId, insightType);
             return Ok(insights);
         }
@@ -194,8 +207,7 @@ public class InsightsController : ControllerBase
     {
         try
         {
-            // TODO: Get userId from claims
-            var userId = 1;
+            var userId = GetUserId();
             var insights = await _insightService.GetUnreviewedInsightsAsync(userId);
             return Ok(insights);
         }
@@ -243,6 +255,15 @@ public class WorkflowsController : ControllerBase
     }
 
     /// <summary>
+    /// Extract userId from JWT claims
+    /// </summary>
+    private int GetUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return int.TryParse(userIdClaim, out var userId) ? userId : 0;
+    }
+
+    /// <summary>
     /// Get all workflows for user
     /// </summary>
     [HttpGet]
@@ -250,8 +271,7 @@ public class WorkflowsController : ControllerBase
     {
         try
         {
-            // TODO: Get userId from claims
-            var userId = 1;
+            var userId = GetUserId();
             var workflows = await _workflowService.GetUserWorkflowsAsync(userId);
             return Ok(workflows);
         }
@@ -291,8 +311,7 @@ public class WorkflowsController : ControllerBase
     {
         try
         {
-            // TODO: Get userId from claims
-            var userId = 1;
+            var userId = GetUserId();
             var workflow = await _workflowService.CreateWorkflowAsync(userId, request);
             return CreatedAtAction(nameof(GetWorkflow), new { workflowId = workflow.Id }, workflow);
         }
@@ -376,6 +395,15 @@ public class SearchController : ControllerBase
     }
 
     /// <summary>
+    /// Extract userId from JWT claims
+    /// </summary>
+    private int GetUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return int.TryParse(userIdClaim, out var userId) ? userId : 0;
+    }
+
+    /// <summary>
     /// Advanced search across conversations
     /// </summary>
     [HttpPost]
@@ -383,8 +411,7 @@ public class SearchController : ControllerBase
     {
         try
         {
-            // TODO: Get userId from claims
-            var userId = 1;
+            var userId = GetUserId();
             var results = await _searchService.SearchAsync(userId, request);
             return Ok(results);
         }
@@ -406,8 +433,7 @@ public class SearchController : ControllerBase
     {
         try
         {
-            // TODO: Get userId from claims
-            var userId = 1;
+            var userId = GetUserId();
             var results = await _searchService.SearchContentAsync(userId, query, skip, take);
             return Ok(results);
         }
@@ -429,8 +455,7 @@ public class SearchController : ControllerBase
     {
         try
         {
-            // TODO: Get userId from claims
-            var userId = 1;
+            var userId = GetUserId();
             var results = await _searchService.SearchByTopicAsync(userId, topic, skip, take);
             return Ok(results);
         }
@@ -452,8 +477,7 @@ public class SearchController : ControllerBase
     {
         try
         {
-            // TODO: Get userId from claims
-            var userId = 1;
+            var userId = GetUserId();
             var results = await _searchService.SearchByIntentAsync(userId, intent, skip, take);
             return Ok(results);
         }
@@ -472,8 +496,7 @@ public class SearchController : ControllerBase
     {
         try
         {
-            // TODO: Get userId from claims
-            var userId = 1;
+            var userId = GetUserId();
             await _searchService.RebuildSearchIndexAsync(userId);
             return Accepted(new { message = "Index rebuild in progress" });
         }
@@ -503,6 +526,15 @@ public class SegmentationController : ControllerBase
     }
 
     /// <summary>
+    /// Extract userId from JWT claims
+    /// </summary>
+    private int GetUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return int.TryParse(userIdClaim, out var userId) ? userId : 0;
+    }
+
+    /// <summary>
     /// Get user segment analysis
     /// </summary>
     [HttpGet]
@@ -510,8 +542,7 @@ public class SegmentationController : ControllerBase
     {
         try
         {
-            // TODO: Get userId from claims
-            var userId = 1;
+            var userId = GetUserId();
             var segment = await _segmentationService.GetUserSegmentAsync(userId);
             if (segment == null)
                 return NotFound();
@@ -569,8 +600,7 @@ public class SegmentationController : ControllerBase
     {
         try
         {
-            // TODO: Get userId from claims
-            var userId = 1;
+            var userId = GetUserId();
             var analysis = await _segmentationService.AnalyzeUserSegmentAsync(userId);
             return Ok(analysis);
         }
@@ -589,8 +619,7 @@ public class SegmentationController : ControllerBase
     {
         try
         {
-            // TODO: Get userId from claims
-            var userId = 1;
+            var userId = GetUserId();
             var prediction = await _segmentationService.PredictChurnAsync(userId);
             return Ok(prediction);
         }
