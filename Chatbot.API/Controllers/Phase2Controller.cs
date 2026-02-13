@@ -380,7 +380,7 @@ public class Phase2Controller : ControllerBase
         {
             var userId = GetUserId();
             var reportBytes = await _reportingService.GenerateReportAsync(userId, reportId, format);
-            
+
             var contentType = format.ToLower() switch
             {
                 "json" => "application/json",

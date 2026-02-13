@@ -29,7 +29,7 @@ public class WebhookManagementService : IWebhookManagementService
         {
             var response = await _httpClient.PostAsJsonAsync("api/phase2/webhooks", request);
             response.EnsureSuccessStatusCode();
-            
+
             var result = await response.Content.ReadFromJsonAsync<WebhookDto>();
             return result;
         }
@@ -46,7 +46,7 @@ public class WebhookManagementService : IWebhookManagementService
         {
             var response = await _httpClient.GetAsync("api/phase2/webhooks");
             response.EnsureSuccessStatusCode();
-            
+
             var result = await response.Content.ReadFromJsonAsync<List<WebhookDto>>();
             return result ?? new List<WebhookDto>();
         }
@@ -112,7 +112,7 @@ public class ApiKeyManagementService : IApiKeyManagementService
         {
             var response = await _httpClient.PostAsJsonAsync("api/phase2/api-keys", request);
             response.EnsureSuccessStatusCode();
-            
+
             var result = await response.Content.ReadFromJsonAsync<ApiKeyCreateResponse>();
             return result;
         }
@@ -129,7 +129,7 @@ public class ApiKeyManagementService : IApiKeyManagementService
         {
             var response = await _httpClient.GetAsync("api/phase2/api-keys");
             response.EnsureSuccessStatusCode();
-            
+
             var result = await response.Content.ReadFromJsonAsync<List<ApiKeyDto>>();
             return result ?? new List<ApiKeyDto>();
         }
@@ -180,7 +180,7 @@ public class TwoFactorManagementService : ITwoFactorManagementService
         {
             var response = await _httpClient.PostAsync("api/phase2/2fa/setup", null);
             response.EnsureSuccessStatusCode();
-            
+
             var result = await response.Content.ReadFromJsonAsync<TwoFactorSetupResponse>();
             return result;
         }
@@ -213,7 +213,7 @@ public class TwoFactorManagementService : ITwoFactorManagementService
         {
             var response = await _httpClient.PostAsync("api/phase2/2fa/disable", null);
             response.EnsureSuccessStatusCode();
-            
+
             var resultContent = await response.Content.ReadAsStringAsync();
             // Parse the response to get backup codes
             return new List<string>();
@@ -250,7 +250,7 @@ public class IpWhitelistManagementService : IIpWhitelistManagementService
         {
             var response = await _httpClient.PostAsJsonAsync("api/phase2/ip-whitelist", request);
             response.EnsureSuccessStatusCode();
-            
+
             var result = await response.Content.ReadFromJsonAsync<IpWhitelistDto>();
             return result;
         }
@@ -267,7 +267,7 @@ public class IpWhitelistManagementService : IIpWhitelistManagementService
         {
             var response = await _httpClient.GetAsync("api/phase2/ip-whitelist");
             response.EnsureSuccessStatusCode();
-            
+
             var result = await response.Content.ReadFromJsonAsync<List<IpWhitelistDto>>();
             return result ?? new List<IpWhitelistDto>();
         }

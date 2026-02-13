@@ -66,7 +66,8 @@
                                 }
                             </td>
                             <td>
-                                <button class="btn btn-sm btn-danger" @onclick="() => RevokeApiKey(key.Id)" disabled="@(!key.IsActive)">Revoke</button>
+                                <button class="btn btn-sm btn-danger" @onclick="() => RevokeApiKey(key.Id)"
+                                        disabled="@(!key.IsActive)">Revoke</button>
                             </td>
                         </tr>
                     }
@@ -82,21 +83,23 @@
             <div class="card bg-light">
                 <div class="card-body">
                     <code class="user-select-all">@newKeyResponse.Key</code>
-                    <button class="btn btn-sm btn-outline-primary ms-2" @onclick="CopyToClipboard">Copy to Clipboard</button>
+                    <button class="btn btn-sm btn-outline-primary ms-2" @onclick="CopyToClipboard">Copy to
+                        Clipboard</button>
+                    </div>
                 </div>
+                <button type="button" class="btn-close"
+                        @onclick="() => { showNewKeyDialog = false; newKeyResponse = null; }"></button>
             </div>
-            <button type="button" class="btn-close" @onclick="() => { showNewKeyDialog = false; newKeyResponse = null; }"></button>
-        </div>
-    }
+        }
 
-    @if (message != null)
-    {
-        <div class="alert alert-@messageType alert-dismissible fade show" role="alert">
-            @message
-            <button type="button" class="btn-close" @onclick="() => message = null"></button>
-        </div>
-    }
-</div>
+        @if (message != null)
+        {
+            <div class="alert alert-@messageType alert-dismissible fade show" role="alert">
+                @message
+                <button type="button" class="btn-close" @onclick="() => message = null"></button>
+            </div>
+        }
+    </div>
 
 @code {
     private List<ApiKeyDto>? apiKeys;
@@ -131,7 +134,7 @@
             Description: $"Generated at {DateTime.UtcNow:g}",
             ExpirationDays: null
         );
-        
+
         try
         {
             newKeyResponse = await ApiKeyService.GenerateApiKeyAsync(request);

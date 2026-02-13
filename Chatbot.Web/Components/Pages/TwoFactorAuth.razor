@@ -34,67 +34,66 @@
                 <div class="row">
                     <div class="col-md-6">
                         <h6>Step 1: Scan QR Code</h6>
-                        <p>Use an authenticator app (Google Authenticator, Authy, Microsoft Authenticator) to scan this QR code:</p>
-                        @if (qrCodeUrl != null)
-                        {
-                            <div class="text-center mb-3">
-                                <img src="@qrCodeUrl" alt="QR Code" style="width: 200px; height: 200px;" />
-                            </div>
-                        }
-                        <p class="small text-muted">Can't scan? Enter this code manually:</p>
-                        <code>@setupResponse?.Secret</code>
-                    </div>
-                    <div class="col-md-6">
-                        <h6>Step 2: Verify Code</h6>
-                        <p>Enter the 6-digit code from your authenticator app:</p>
-                        <div class="mb-3">
-                            <input type="text" class="form-control form-control-lg" 
-                                   @bind="verificationCode" 
-                                   placeholder="000000" 
-                                   maxlength="6"
-                                   inputmode="numeric" />
-                        </div>
-                        <button class="btn btn-primary" @onclick="VerifyAndEnable2FA">Verify & Enable</button>
-                    </div>
-                </div>
-
-                <div class="mt-4 pt-4 border-top">
-                    <h6>Backup Codes</h6>
-                    <p class="text-muted">Save these backup codes in a secure place. Use them if you lose access to your authenticator app.</p>
-                    <div class="list-group">
-                        @if (setupResponse?.BackupCodes != null)
-                        {
-                            @foreach (var backupCode in setupResponse.BackupCodes)
+                        <p>Use an authenticator app (Google Authenticator, Authy, Microsoft Authenticator) to scan this QR
+                            code:</p>
+                            @if (qrCodeUrl != null)
                             {
-                                <div class="list-group-item"><code>@backupCode</code></div>
+                                <div class="text-center mb-3">
+                                    <img src="@qrCodeUrl" alt="QR Code" style="width: 200px; height: 200px;" />
+                                </div>
                             }
-                        }
+                            <p class="small text-muted">Can't scan? Enter this code manually:</p>
+                            <code>@setupResponse?.Secret</code>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Step 2: Verify Code</h6>
+                            <p>Enter the 6-digit code from your authenticator app:</p>
+                            <div class="mb-3">
+                                <input type="text" class="form-control form-control-lg" @bind="verificationCode"
+                                       placeholder="000000" maxlength="6"                                   inputmode="numeric" />
+                            </div>
+                            <button class="btn btn-primary" @onclick="VerifyAndEnable2FA">Verify & Enable</button>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-top">
+                        <h6>Backup Codes</h6>
+                        <p class="text-muted">Save these backup codes in a secure place. Use them if you lose access to your
+                            authenticator app.</p>
+                            <div class="list-group">
+                                @if (setupResponse?.BackupCodes != null)
+                                {
+                                    @foreach (var backupCode in setupResponse.BackupCodes)
+                                    {
+                                        <div class="list-group-item"><code>@backupCode</code></div>
+                                    }
+                                }
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    }
+            }
     else if (setupStep == SetupStep.Enabled)
-    {
-        <div class="alert alert-success" role="alert">
-            <h4 class="alert-heading">2FA Enabled Successfully!</h4>
-            <p>Your account is now protected with two-factor authentication.</p>
-            <button class="btn btn-danger" @onclick="Disable2FA">Disable 2FA</button>
-        </div>
-    }
+            {
+                <div class="alert alert-success" role="alert">
+                    <h4 class="alert-heading">2FA Enabled Successfully!</h4>
+                    <p>Your account is now protected with two-factor authentication.</p>
+                    <button class="btn btn-danger" @onclick="Disable2FA">Disable 2FA</button>
+                </div>
+            }
 
-    @if (message != null)
-    {
-        <div class="alert alert-@messageType alert-dismissible fade show mt-4" role="alert">
-            @message
-            <button type="button" class="btn-close" @onclick="() => message = null"></button>
+            @if (message != null)
+            {
+                <div class="alert alert-@messageType alert-dismissible fade show mt-4" role="alert">
+                    @message
+                    <button type="button" class="btn-close" @onclick="() => message = null"></button>
+                </div>
+            }
         </div>
-    }
-</div>
 
 @code {
     private enum SetupStep { Selection, Display, Enabled }
-    
+
     private SetupStep setupStep = SetupStep.Display;
     private TwoFactorSetupResponse? setupResponse;
     private string qrCodeUrl = "";

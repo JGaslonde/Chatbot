@@ -30,7 +30,7 @@ public class ReportingManagementService : IReportingManagementService
         {
             var response = await _httpClient.PostAsJsonAsync("api/phase2/reports", request);
             response.EnsureSuccessStatusCode();
-            
+
             var result = await response.Content.ReadFromJsonAsync<ScheduledReportDto>();
             return result;
         }
@@ -47,7 +47,7 @@ public class ReportingManagementService : IReportingManagementService
         {
             var response = await _httpClient.GetAsync("api/phase2/reports");
             response.EnsureSuccessStatusCode();
-            
+
             var result = await response.Content.ReadFromJsonAsync<List<ScheduledReportDto>>();
             return result ?? new List<ScheduledReportDto>();
         }
@@ -94,7 +94,7 @@ public class ReportingManagementService : IReportingManagementService
         {
             var response = await _httpClient.GetAsync($"api/phase2/reports/{reportId}/generate?format={format}");
             response.EnsureSuccessStatusCode();
-            
+
             var result = await response.Content.ReadAsByteArrayAsync();
             return result;
         }
@@ -132,7 +132,7 @@ public class ImportManagementService : IImportManagementService
         {
             var response = await _httpClient.PostAsJsonAsync("api/phase2/imports", request);
             response.EnsureSuccessStatusCode();
-            
+
             var result = await response.Content.ReadFromJsonAsync<ImportJobDto>();
             return result;
         }
@@ -149,7 +149,7 @@ public class ImportManagementService : IImportManagementService
         {
             var response = await _httpClient.GetAsync("api/phase2/imports");
             response.EnsureSuccessStatusCode();
-            
+
             var result = await response.Content.ReadFromJsonAsync<List<ImportJobDto>>();
             return result ?? new List<ImportJobDto>();
         }
@@ -166,7 +166,7 @@ public class ImportManagementService : IImportManagementService
         {
             var response = await _httpClient.GetAsync($"api/phase2/imports/{jobId}");
             response.EnsureSuccessStatusCode();
-            
+
             var result = await response.Content.ReadFromJsonAsync<ImportJobDto>();
             return result;
         }
@@ -232,7 +232,7 @@ public class UserPreferencesManagementService : IUserPreferencesManagementServic
         {
             var response = await _httpClient.GetAsync("api/phase2/preferences");
             response.EnsureSuccessStatusCode();
-            
+
             var result = await response.Content.ReadFromJsonAsync<EnhancedUserPreferencesDto>();
             return result;
         }
@@ -249,7 +249,7 @@ public class UserPreferencesManagementService : IUserPreferencesManagementServic
         {
             var response = await _httpClient.PutAsJsonAsync("api/phase2/preferences", request);
             response.EnsureSuccessStatusCode();
-            
+
             var result = await response.Content.ReadFromJsonAsync<EnhancedUserPreferencesDto>();
             return result;
         }

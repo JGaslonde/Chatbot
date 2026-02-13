@@ -113,7 +113,8 @@
                             <td>@import.FailedRecords</td>
                             <td>
                                 <div class="progress" style="height: 20px;">
-                                    <div class="progress-bar" role="progressbar" style="width: @progress%" aria-valuenow="@progress" aria-valuemin="0" aria-valuemax="100">
+                                    <div class="progress-bar" role="progressbar" style="width: @progress%"
+                                         aria-valuenow="@progress" aria-valuemin="0" aria-valuemax="100">
                                         @progress%
                                     </div>
                                 </div>
@@ -121,9 +122,11 @@
                             <td>
                                 @if (import.Status == "pending")
                                 {
-                                    <button class="btn btn-sm btn-success" @onclick="() => ProcessImport(import.Id)">Process</button>
+                                    <button class="btn btn-sm btn-success"
+                                            @onclick="() => ProcessImport(import.Id)">Process</button>
                                 }
-                                <button class="btn btn-sm btn-info" @onclick="() => ViewImportDetails(import.Id)">Details</button>
+                                <button class="btn btn-sm btn-info"
+                                        @onclick="() => ViewImportDetails(import.Id)">Details</button>
                             </td>
                         </tr>
                     }
