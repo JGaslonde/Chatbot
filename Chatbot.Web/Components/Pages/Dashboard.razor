@@ -1,0 +1,280 @@
+@page "/dashboard"
+@using Chatbot.Core.Models.Responses
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Dashboard - Chatbot</PageTitle>
+
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4">Dashboard</h1>
+            <p class="text-muted">Real-time insights and analytics for your conversations</p>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    @if (isLoading)
+    {
+        <div class="alert alert-info" role="alert">
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Loading dashboard data...
+        </div>
+    }
+
+    <!-- Error State -->
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Error:</strong> @errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+        </div>
+    }
+
+    <!-- Key Metrics Row -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 border-primary">
+                <div class="card-body">
+                    <h5 class="card-title text-muted mb-3">Total Conversations</h5>
+                    <h2 class="text-primary">@totalConversations</h2>
+                    <small class="text-success">↑ 12% this week</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 border-success">
+                <div class="card-body">
+                    <h5 class="card-title text-muted mb-3">Avg Sentiment</h5>
+                    <h2 class="text-success">@avgSentiment.ToString("F2")</h2>
+                    <small class="text-success">↑ +0.15 today</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 border-warning">
+                <div class="card-body">
+                    <h5 class="card-title text-muted mb-3">Pending Actions</h5>
+                    <h2 class="text-warning">@pendingActions</h2>
+                    <small class="text-danger">@unreviewed_insights unreviewed insights</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 border-info">
+                <div class="card-body">
+                    <h5 class="card-title text-muted mb-3">Active Workflows</h5>
+                    <h2 class="text-info">@activeWorkflows</h2>
+                    <small class="text-info">→ @runningExecutions executing</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-primary me-2" @onclick="NavigateToAnalytics">
+                        <i class="bi bi-graph-up"></i> View Analytics
+                    </button>
+                    <button class="btn btn-success me-2" @onclick="NavigateToWorkflows">
+                        <i class="bi bi-gear"></i> Manage Workflows
+                    </button>
+                    <button class="btn btn-info me-2" @onclick="NavigateToInsights">
+                        <i class="bi bi-lightbulb"></i> View Insights
+                    </button>
+                    <button class="btn btn-secondary me-2" @onclick="NavigateToSegmentation">
+                        <i class="bi bi-people"></i> User Segmentation
+                    </button>
+                    <button class="btn btn-outline-primary" @onclick="RefreshData">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activities -->
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Top Conversation Topics</h5>
+                </div>
+                <div class="card-body">
+                    @if (topTopics != null && topTopics.Count > 0)
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var topic in topTopics)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    @topic.Topic
+                                    <span class="badge bg-primary rounded-pill">@topic.Count</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No topics available</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">System Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <strong>API Health</strong>
+                                <span class="badge bg-success">Healthy</span>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <strong>Database</strong>
+                                <span class="badge bg-success">Connected</span>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <strong>Processing Queue</strong>
+                                <span class="badge bg-info">@queuedMessages messages</span>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <strong>Cache Hit Rate</strong>
+                                <span class="badge bg-primary">@cacheHitRate.ToString("F1")%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Summary -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">7-Day Trend</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        @foreach (var day in Last7Days)
+                        {
+                            <div class="col">
+                                <h6>@day.DayOfWeek.ToString().Substring(0, 3)</h6>
+                                <p class="mb-0">
+                                    <i class="bi bi-chat-dots text-primary"></i>
+                                    <strong>@day.Day</strong>
+                                </p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isLoading = true;
+    private string? errorMessage;
+    
+    // Metrics
+    private int totalConversations = 0;
+    private double avgSentiment = 0.0;
+    private int pendingActions = 0;
+    private int activeWorkflows = 0;
+    private int unreviewed_insights = 0;
+    private int runningExecutions = 0;
+    private int queuedMessages = 0;
+    private double cacheHitRate = 92.5;
+    
+    // Collections
+    private List<(string Topic, int Count)> topTopics = new();
+    private List<DateTime> Last7Days = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await LoadDashboardData();
+            GenerateLast7Days();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load dashboard: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadDashboardData()
+    {
+        // Simulate API calls with mock data
+        // In production, these would be real HTTP calls:
+        // var analytics = await Http.GetFromJsonAsync<AnalyticsSummaryDto>("api/v1/analytics/summary");
+        
+        await Task.Delay(500); // Simulate network latency
+        
+        totalConversations = 847;
+        avgSentiment = 0.78;
+        pendingActions = 12;
+        activeWorkflows = 5;
+        unreviewed_insights = 8;
+        runningExecutions = 3;
+        queuedMessages = 24;
+
+        topTopics = new()
+        {
+            ("Product Inquiry", 156),
+            ("Technical Support", 142),
+            ("Billing Question", 98),
+            ("Account Management", 87),
+            ("General Feedback", 64)
+        };
+    }
+
+    private void GenerateLast7Days()
+    {
+        Last7Days = Enumerable.Range(0, 7)
+            .Select(i => DateTime.Now.AddDays(-(6 - i)))
+            .ToList();
+    }
+
+    // Navigation Methods
+    private void NavigateToAnalytics() => Navigation.NavigateTo("/analytics");
+    private void NavigateToWorkflows() => Navigation.NavigateTo("/workflows");
+    private void NavigateToInsights() => Navigation.NavigateTo("/ml-insights");
+    private void NavigateToSegmentation() => Navigation.NavigateTo("/segmentation");
+
+    // Action Methods
+    private async Task RefreshData()
+    {
+        isLoading = true;
+        errorMessage = null;
+        await LoadDashboardData();
+        isLoading = false;
+    }
+}
