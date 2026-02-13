@@ -105,11 +105,17 @@ builder.Services.AddSignalR();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IConversationRepository, ConversationRepository>();
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<IUserNotificationPreferencesRepository, UserNotificationPreferencesRepository>();
 // Register generic repositories for new entities
 builder.Services.AddScoped<Repository<Message>>();
 builder.Services.AddScoped<Repository<User>>();
 builder.Services.AddScoped<Repository<Conversation>>();
 builder.Services.AddScoped<Repository<UserPreferences>>();
+builder.Services.AddScoped<Repository<AuditLog>>();
+builder.Services.AddScoped<Repository<Notification>>();
+builder.Services.AddScoped<Repository<UserNotificationPreferences>>();
 
 // Register infrastructure services (DRY and Dependency Inversion)
 builder.Services.AddScoped<IHttpContextAccessor, HttpContextAccessor>();
@@ -130,6 +136,13 @@ builder.Services.AddScoped<IConversationSummarizationService, ConversationSummar
 builder.Services.AddScoped<IConversationAnalyticsService, ConversationAnalyticsService>();
 builder.Services.AddScoped<IUserPreferencesService, UserPreferencesService>();
 builder.Services.AddScoped<IConversationExportService, ConversationExportService>();
+// Register new expansion services
+builder.Services.AddScoped<IAdvancedSearchService, AdvancedSearchService>();
+builder.Services.AddScoped<IAdvancedAnalyticsService, AdvancedAnalyticsService>();
+builder.Services.AddScoped<IAuditLoggingService, AuditLoggingService>();
+builder.Services.AddScoped<IExportService, ExportService>();
+builder.Services.AddScoped<IBatchOperationService, BatchOperationService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // Add CORS with SignalR support
 builder.Services.AddCors(options =>
