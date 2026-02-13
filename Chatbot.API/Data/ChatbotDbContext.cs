@@ -18,6 +18,15 @@ public class ChatbotDbContext : DbContext
     public DbSet<Notification> Notifications { get; set; } = null!;
     public DbSet<UserNotificationPreferences> UserNotificationPreferences { get; set; } = null!;
 
+    // Phase 2 Enterprise Features
+    public DbSet<Webhook> Webhooks { get; set; } = null!;
+    public DbSet<WebhookDelivery> WebhookDeliveries { get; set; } = null!;
+    public DbSet<ApiKey> ApiKeys { get; set; } = null!;
+    public DbSet<TwoFactorAuth> TwoFactorAuths { get; set; } = null!;
+    public DbSet<IpWhitelist> IpWhitelists { get; set; } = null!;
+    public DbSet<ScheduledReport> ScheduledReports { get; set; } = null!;
+    public DbSet<ImportJob> ImportJobs { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -57,6 +66,44 @@ public class ChatbotDbContext : DbContext
         // Message configuration
         modelBuilder.Entity<Message>()
             .HasIndex(m => new { m.ConversationId, m.SentAt });
+
+        // Phase 2 Entity Configurations
+
+        // Webhook configuration
+        modelBuilder.Entity<Webhook>()
+            .HasMany(w => w.Deliveries)
+            .WithOne(wd => wd.Webhook)
+            .HasForeignKey(wd => wd.WebhookId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Webhook>()
+            .HasIndex(w => new { w.UserId, w.IsActive });
+
+        // ApiKey configuration
+        modelBuilder.Entity<ApiKey>()
+            .HasIndex(ak => ak.KeyHash)
+            .IsUnique();
+
+        modelBuilder.Entity<ApiKey>()
+            .HasIndex(ak => new { ak.UserId, ak.IsActive });
+
+        // TwoFactorAuth configuration
+        modelBuilder.Entity<TwoFactorAuth>()
+            .HasIndex(tfa => tfa.UserId)
+            .IsUnique();
+
+        // IpWhitelist configuration
+        modelBuilder.Entity<IpWhitelist>()
+            .HasIndex(iw => new { iw.UserId, iw.IpAddress })
+            .IsUnique();
+
+        // ScheduledReport configuration
+        modelBuilder.Entity<ScheduledReport>()
+            .HasIndex(sr => new { sr.UserId, sr.IsActive });
+
+        // ImportJob configuration
+        modelBuilder.Entity<ImportJob>()
+            .HasIndex(ij => new { ij.UserId, ij.CreatedAt });
 
         // Seed initial data if needed
         SeedData(modelBuilder);

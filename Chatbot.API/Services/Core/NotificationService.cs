@@ -69,7 +69,7 @@ public class NotificationService : INotificationService
         try
         {
             var notifications = (await _notificationRepository.GetUserNotificationsAsync(userId)).ToList();
-            
+
             foreach (var notification in notifications.Where(n => !n.IsRead))
             {
                 notification.IsRead = true;
@@ -93,7 +93,7 @@ public class NotificationService : INotificationService
         try
         {
             var preferences = await _preferencesRepository.GetByUserIdAsync(userId);
-            
+
             // Check if notifications are enabled
             if (preferences != null && !preferences.EnableNotifications)
             {

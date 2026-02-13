@@ -32,7 +32,7 @@ public class BatchOperationService : IBatchOperationService
             {
                 "delete" => await DeleteConversationsBatchAsync(userId, request.ConversationIds),
                 "archive" => await ArchiveConversationsBatchAsync(userId, request.ConversationIds),
-                _ => new BatchOperationResponse(false, "Unknown operation", 0, request.ConversationIds.Count, 
+                _ => new BatchOperationResponse(false, "Unknown operation", 0, request.ConversationIds.Count,
                     new List<string> { $"Operation '{request.Operation}' is not supported" })
             };
         }
@@ -54,7 +54,7 @@ public class BatchOperationService : IBatchOperationService
             try
             {
                 var conversation = await _conversationRepository.GetByIdAsync(conversationId);
-                
+
                 if (conversation == null)
                 {
                     errors.Add($"Conversation {conversationId} not found");
@@ -101,7 +101,7 @@ public class BatchOperationService : IBatchOperationService
             try
             {
                 var conversation = await _conversationRepository.GetByIdAsync(conversationId);
-                
+
                 if (conversation == null)
                 {
                     errors.Add($"Conversation {conversationId} not found");

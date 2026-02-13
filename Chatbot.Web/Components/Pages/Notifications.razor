@@ -42,10 +42,12 @@
                         <small class="text-muted">@notification.CreatedAt.ToString("g")</small>
                     </div>
                     <div>
-                        <button class="btn btn-sm btn-outline-success" @onclick="@(async () => await MarkAsRead(notification.Id))">
+                        <button class="btn btn-sm btn-outline-success"
+                                @onclick="@(async () => await MarkAsRead(notification.Id))">
                             Read
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" @onclick="@(async () => await DeleteNotification(notification.Id))">
+                        <button class="btn btn-sm btn-outline-danger"
+                                @onclick="@(async () => await DeleteNotification(notification.Id))">
                             Delete
                         </button>
                     </div>

@@ -79,7 +79,7 @@ public class ExportService : IExportService
                     // Escape CSV fields
                     var title = conversation.Title?.Replace("\"", "\"\"") ?? "";
                     var summary = conversation.Summary?.Replace("\"", "\"\"") ?? "";
-                    
+
                     sb.AppendLine($"{conversation.Id},\"{title}\",{conversation.StartedAt:O},\"{summary}\"");
 
                     if (includeMessages)

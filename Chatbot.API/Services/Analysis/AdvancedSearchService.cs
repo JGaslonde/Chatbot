@@ -31,7 +31,7 @@ public class AdvancedSearchService : IAdvancedSearchService
         try
         {
             var conversations = (await _conversationRepository.GetUserConversationsAsync(userId)).ToList();
-            
+
             // Filter by query if provided
             if (!string.IsNullOrWhiteSpace(request.Query))
             {

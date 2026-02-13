@@ -45,7 +45,7 @@ public class AdvancedAnalyticsService : IAdvancedAnalyticsService
             var dailyMessageCount = GetDailyMessageCount(allMessages);
 
             var avgConversationDuration = filteredConversations.Count > 0
-                ? filteredConversations.Average(c => 
+                ? filteredConversations.Average(c =>
                     (c.LastMessageAt.Subtract(c.StartedAt).TotalMinutes))
                 : 0;
 

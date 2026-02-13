@@ -13,7 +13,8 @@
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label for="searchQuery" class="form-label">Search Query</label>
-                    <input type="text" class="form-control" id="searchQuery" @bind="query" placeholder="Search conversations or messages..." />
+                    <input type="text" class="form-control" id="searchQuery" @bind="query"
+                           placeholder="Search conversations or messages..." />
                 </div>
                 <div class="col-md-6">
                     <label for="sortBy" class="form-label">Sort By</label>
@@ -114,7 +115,7 @@
 
 @code {
     private string query = "";
-   private string sortBy = "lastMessageAt";
+    private string sortBy = "lastMessageAt";
     private DateTime fromDate = DateTime.Today.AddMonths(-1);
     private DateTime toDate = DateTime.Today;
     private int pageSize = 20;

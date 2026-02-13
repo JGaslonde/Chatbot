@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Chatbot.API.Services;
 using Chatbot.Core.Models;
 using Chatbot.Core.Models.Entities;
-using Chatbot.Core.Models.Requests;  
+using Chatbot.Core.Models.Requests;
 using Chatbot.Core.Models.Responses;
 using Chatbot.API.Exceptions;
 using Chatbot.API.Infrastructure;
@@ -295,7 +295,7 @@ public class ChatController : ApiControllerBase
         LogAction("DeleteConversationsBatch", new { count = conversationIds.Count });
 
         var result = await _batchOperation.DeleteConversationsBatchAsync(userId, conversationIds);
-        await _auditLogging.LogActionAsync(userId, "BatchDelete", "Conversation", null, null, 
+        await _auditLogging.LogActionAsync(userId, "BatchDelete", "Conversation", null, null,
             new Dictionary<string, object> { { "count", conversationIds.Count } });
 
         return Ok(result);

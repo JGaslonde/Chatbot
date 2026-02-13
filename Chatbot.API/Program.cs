@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
 using Chatbot.API.Data.Context;
 using Chatbot.API.Data.Repositories;
 using Chatbot.API.Data.Repositories.Interfaces;
@@ -108,6 +110,14 @@ builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IUserNotificationPreferencesRepository, UserNotificationPreferencesRepository>();
+// Phase 2 Enterprise Features repositories
+builder.Services.AddScoped<IWebhookRepository, WebhookRepository>();
+builder.Services.AddScoped<IWebhookDeliveryRepository, WebhookDeliveryRepository>();
+builder.Services.AddScoped<IApiKeyRepository, ApiKeyRepository>();
+builder.Services.AddScoped<ITwoFactorAuthRepository, TwoFactorAuthRepository>();
+builder.Services.AddScoped<IIpWhitelistRepository, IpWhitelistRepository>();
+builder.Services.AddScoped<IScheduledReportRepository, ScheduledReportRepository>();
+builder.Services.AddScoped<IImportJobRepository, ImportJobRepository>();
 // Register generic repositories for new entities
 builder.Services.AddScoped<Repository<Message>>();
 builder.Services.AddScoped<Repository<User>>();
@@ -116,6 +126,14 @@ builder.Services.AddScoped<Repository<UserPreferences>>();
 builder.Services.AddScoped<Repository<AuditLog>>();
 builder.Services.AddScoped<Repository<Notification>>();
 builder.Services.AddScoped<Repository<UserNotificationPreferences>>();
+// Phase 2 generic repositories
+builder.Services.AddScoped<Repository<Webhook>>();
+builder.Services.AddScoped<Repository<WebhookDelivery>>();
+builder.Services.AddScoped<Repository<ApiKey>>();
+builder.Services.AddScoped<Repository<TwoFactorAuth>>();
+builder.Services.AddScoped<Repository<IpWhitelist>>();
+builder.Services.AddScoped<Repository<ScheduledReport>>();
+builder.Services.AddScoped<Repository<ImportJob>>();
 
 // Register infrastructure services (DRY and Dependency Inversion)
 builder.Services.AddScoped<IHttpContextAccessor, HttpContextAccessor>();
@@ -143,6 +161,20 @@ builder.Services.AddScoped<IAuditLoggingService, AuditLoggingService>();
 builder.Services.AddScoped<IExportService, ExportService>();
 builder.Services.AddScoped<IBatchOperationService, BatchOperationService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+// Phase 2 Enterprise Features services
+builder.Services.AddScoped<IWebhookService, WebhookService>();
+builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
+builder.Services.AddScoped<ITwoFactorService, TwoFactorService>();
+builder.Services.AddScoped<IIpWhitelistService, IpWhitelistService>();
+builder.Services.AddScoped<IReportingService, ReportingService>();
+builder.Services.AddScoped<IImportService, ImportService>();
+builder.Services.AddScoped<ICacheService, CacheService>();
+builder.Services.AddScoped<IUserPreferencesEnhancedService, UserPreferencesEnhancedService>();
+// Add HttpClientFactory for webhook delivery
+builder.Services.AddHttpClient();
+// Add memory cache for distributed cache interface
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<IDistributedCache, MemoryDistributedCache>();
 
 // Add CORS with SignalR support
 builder.Services.AddCors(options =>
