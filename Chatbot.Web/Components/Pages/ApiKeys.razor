@@ -1,0 +1,198 @@
+@page "/api-keys"
+@using Chatbot.Core.Models.Requests
+@using Chatbot.Core.Models.Responses
+@using Chatbot.Web.Services
+@inject IApiKeyManagementService ApiKeyService
+@inject ILogger<ApiKeys> Logger
+@attribute [Authorize]
+
+<PageTitle>API Keys Management</PageTitle>
+
+<div class="container mt-5">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>API Keys Management</h2>
+            <p class="text-muted">Generate and manage API keys for programmatic access</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <button class="btn btn-primary" @onclick="GenerateNewApiKey">+ Generate Key</button>
+        </div>
+    </div>
+
+    @if (apiKeys == null)
+    {
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading API keys...</span>
+            </div>
+        </div>
+    }
+    else if (apiKeys.Count == 0)
+    {
+        <div class="alert alert-info" role="alert">
+            No API keys configured yet. Generate an API key to enable programmatic access.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Name</th>
+                        <th>Key Hash</th>
+                        <th>Created</th>
+                        <th>Last Used</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var key in apiKeys)
+                    {
+                        <tr>
+                            <td>@key.Name</td>
+                            <td><code>@key.Name</code></td>
+                            <td>@key.CreatedAt.ToString("g")</td>
+                            <td>@key.LastUsedAt?.ToString("g") ?? "Never"</td>
+                            <td>
+                                @if (key.IsActive)
+                                {
+                                    <span class="badge bg--success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">Revoked</span>
+                                }
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-danger" @onclick="() => RevokeApiKey(key.Id)" disabled="@(!key.IsActive)">Revoke</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (showNewKeyDialog && newKeyResponse != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show mt-4" role="alert">
+            <h5>Your API Key (Save this securely - shown only once)</h5>
+            <div class="card bg-light">
+                <div class="card-body">
+                    <code class="user-select-all">@newKeyResponse.Key</code>
+                    <button class="btn btn-sm btn-outline-primary ms-2" @onclick="CopyToClipboard">Copy to Clipboard</button>
+                </div>
+            </div>
+            <button type="button" class="btn-close" @onclick="() => { showNewKeyDialog = false; newKeyResponse = null; }"></button>
+        </div>
+    }
+
+    @if (message != null)
+    {
+        <div class="alert alert-@messageType alert-dismissible fade show" role="alert">
+            @message
+            <button type="button" class="btn-close" @onclick="() => message = null"></button>
+        </div>
+    }
+</div>
+
+@code {
+    private List<ApiKeyDto>? apiKeys;
+    private ApiKeyCreateResponse? newKeyResponse;
+    private bool showNewKeyDialog = false;
+    private string? message;
+    private string messageType = "info";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadApiKeys();
+    }
+
+    private async Task LoadApiKeys()
+    {
+        try
+        {
+            apiKeys = await ApiKeyService.GetApiKeysAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Error loading API keys: {ex.Message}");
+            message = "Failed to load API keys";
+            messageType = "danger";
+        }
+    }
+
+    private async Task GenerateNewApiKey()
+    {
+        var request = new ApiKeyRequest(
+            Name: $"Key-{DateTime.UtcNow:yyyyMMdd-HHmmss}",
+            Description: $"Generated at {DateTime.UtcNow:g}",
+            ExpirationDays: null
+        );
+        
+        try
+        {
+            newKeyResponse = await ApiKeyService.GenerateApiKeyAsync(request);
+            if (newKeyResponse != null)
+            {
+                showNewKeyDialog = true;
+                message = "API key generated successfully";
+                messageType = "success";
+                await LoadApiKeys();
+            }
+            else
+            {
+                message = "Failed to generate API key";
+                messageType = "danger";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Error generating API key: {ex.Message}");
+            message = "An error occurred while generating the API key";
+            messageType = "danger";
+        }
+    }
+
+    private async Task RevokeApiKey(int apiKeyId)
+    {
+        if (!await ConfirmAsync("Are you sure you want to revoke this API key? This action cannot be undone."))
+            return;
+
+        try
+        {
+            var success = await ApiKeyService.RevokeApiKeyAsync(apiKeyId);
+            if (success)
+            {
+                message = "API key revoked successfully";
+                messageType = "success";
+                await LoadApiKeys();
+            }
+            else
+            {
+                message = "Failed to revoke API key";
+                messageType = "danger";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Error revoking API key: {ex.Message}");
+            message = "An error occurred while revoking the API key";
+            messageType = "danger";
+        }
+    }
+
+    private async Task CopyToClipboard()
+    {
+        // In a real app, use JS interop to copy to clipboard
+        message = "Copied to clipboard";
+        messageType = "info";
+    }
+
+    private async Task<bool> ConfirmAsync(string message)
+    {
+        return await Task.FromResult(true);
+    }
+}

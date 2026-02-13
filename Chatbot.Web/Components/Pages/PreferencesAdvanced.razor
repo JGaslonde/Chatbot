@@ -1,0 +1,201 @@
+@page "/preferences-advanced"
+@using Chatbot.Core.Models.Requests
+@using Chatbot.Core.Models.Responses
+@using Chatbot.Web.Services
+@inject IUserPreferencesManagementService PreferencesService
+@inject ILogger<PreferencesAdvanced> Logger
+@attribute [Authorize]
+
+<PageTitle>Advanced Preferences</PageTitle>
+
+<div class="container mt-5">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>Advanced Preferences</h2>
+            <p class="text-muted">Customize your chatbot experience and notification settings</p>
+        </div>
+    </div>
+
+    @if (loading)
+    {
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading preferences...</span>
+            </div>
+        </div>
+    }
+    else if (preferences != null)
+    {
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5>Your Preferences</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Theme</label>
+                            <select class="form-control" @bind="editTheme">
+                                <option value="">System Default</option>
+                                <option value="light">Light</option>
+                                <option value="dark">Dark</option>
+                                <option value="auto">Auto (Based on Time)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Language</label>
+                            <select class="form-control" @bind="editLanguage">
+                                <option value="en">English</option>
+                                <option value="es">Spanish</option>
+                                <option value="fr">French</option>
+                                <option value="de">German</option>
+                                <option value="ja">Japanese</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Time Zone</label>
+                            <select class="form-control" @bind="editTimeZone">
+                                <option value="UTC">UTC</option>
+                                <option value="America/New_York">Eastern Time</option>
+                                <option value="America/Chicago">Central Time</option>
+                                <option value="America/Denver">Mountain Time</option>
+                                <option value="America/Los_Angeles">Pacific Time</option>
+                                <option value="Europe/London">London</option>
+                                <option value="Europe/Paris">Central Europe</option>
+                                <option value="Asia/Tokyo">Tokyo</option>
+                                <option value="Australia/Sydney">Sydney</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <h6>Notification Settings</h6>
+                        <div class="form-check mb-2">
+                            <input type="checkbox" class="form-check-input" @bind="editEmailNotifications" id="emailNotif" />
+                            <label class="form-check-label" for="emailNotif">
+                                Enable Email Notifications
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input type="checkbox" class="form-check-input" @bind="editPushNotifications" id="pushNotif" />
+                            <label class="form-check-label" for="pushNotif">
+                                Enable Push Notifications
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button class="btn btn-success" @onclick="SavePreferences">Save Preferences</button>
+                    <button class="btn btn-secondary" @onclick="ReloadPreferences">Reset</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (message != null)
+    {
+        <div class="alert alert-@messageType alert-dismissible fade show mt-4" role="alert">
+            @message
+            <button type="button" class="btn-close" @onclick="() => message = null"></button>
+        </div>
+    }
+</div>
+
+@code {
+    private EnhancedUserPreferencesDto? preferences;
+    private string? editTheme;
+    private string? editLanguage;
+    private string? editTimeZone;
+    private bool editEmailNotifications;
+    private bool editPushNotifications;
+    private bool loading = true;
+    private string? message;
+    private string messageType = "info";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPreferences();
+    }
+
+    private async Task LoadPreferences()
+    {
+        try
+        {
+            preferences = await PreferencesService.GetPreferencesAsync();
+            if (preferences != null)
+            {
+                editTheme = preferences.Theme;
+                editLanguage = preferences.Language;
+                editTimeZone = preferences.TimeZone;
+                editEmailNotifications = preferences.EnableEmailNotifications;
+                editPushNotifications = preferences.EnablePushNotifications;
+            }
+            else
+            {
+                message = "Failed to load preferences";
+                messageType = "danger";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Error loading preferences: {ex.Message}");
+            message = "An error occurred while loading preferences";
+            messageType = "danger";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task SavePreferences()
+    {
+        var request = new EnhancedUserPreferencesRequest(
+            Theme: editTheme,
+            Language: editLanguage,
+            EnableEmailNotifications: editEmailNotifications,
+            EnablePushNotifications: editPushNotifications,
+            TimeZone: editTimeZone,
+            CustomSettings: null
+        );
+
+        try
+        {
+            var result = await PreferencesService.UpdatePreferencesAsync(request);
+            if (result != null)
+            {
+                message = "Preferences saved successfully";
+                messageType = "success";
+                preferences = result;
+            }
+            else
+            {
+                message = "Failed to save preferences";
+                messageType = "danger";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Error saving preferences: {ex.Message}");
+            message = "An error occurred while saving preferences";
+            messageType = "danger";
+        }
+    }
+
+    private async Task ReloadPreferences()
+    {
+        await LoadPreferences();
+        message = "Preferences reloaded";
+        messageType = "info";
+    }
+}

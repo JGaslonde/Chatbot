@@ -28,6 +28,16 @@ builder.Services.AddScoped<IConversationService, ConversationService>();
 builder.Services.AddScoped<IChatHubService>(sp => new ChatHubService(apiBaseUrl));
 builder.Services.AddScoped<ISearchService, SearchService>();
 builder.Services.AddScoped<IThemeService, ThemeService>();
+
+// Add Phase 2 services
+builder.Services.AddScoped<IWebhookManagementService, WebhookManagementService>();
+builder.Services.AddScoped<IApiKeyManagementService, ApiKeyManagementService>();
+builder.Services.AddScoped<ITwoFactorManagementService, TwoFactorManagementService>();
+builder.Services.AddScoped<IIpWhitelistManagementService, IpWhitelistManagementService>();
+builder.Services.AddScoped<IReportingManagementService, ReportingManagementService>();
+builder.Services.AddScoped<IImportManagementService, ImportManagementService>();
+builder.Services.AddScoped<IUserPreferencesManagementService, UserPreferencesManagementService>();
+
 builder.Services.AddLogging();
 
 var app = builder.Build();

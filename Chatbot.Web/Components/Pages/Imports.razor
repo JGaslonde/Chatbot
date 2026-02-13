@@ -1,0 +1,244 @@
+@page "/imports"
+@using Chatbot.Core.Models.Requests
+@using Chatbot.Core.Models.Responses
+@using Chatbot.Web.Services
+@inject IImportManagementService ImportService
+@inject ILogger<Imports> Logger
+@attribute [Authorize]
+
+<PageTitle>Imports Management</PageTitle>
+
+<div class="container mt-5">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>Data Imports</h2>
+            <p class="text-muted">Import data in bulk using CSV or other file formats</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <button class="btn btn-primary" @onclick="ShowUploadForm">+ New Import</button>
+        </div>
+    </div>
+
+    @if (showUploadForm)
+    {
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5>Start New Import</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="mb-3">
+                            <label class="form-label">Import Type</label>
+                            <select class="form-control" @bind="newImportType">
+                                <option value="conversations">Conversations</option>
+                                <option value="users">Users</option>
+                                <option value="custom_data">Custom Data</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">File</label>
+                            <input type="file" class="form-control" @ref="fileInput" accept=".csv,.json,.xlsx" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">File Name (Optional)</label>
+                            <input type="text" class="form-control" @bind="newFileName" placeholder="import.csv" />
+                        </div>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-success" @onclick="StartImport">Start Import</button>
+                    <button class="btn btn-secondary" @onclick="CancelUploadForm">Cancel</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (imports == null)
+    {
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading imports...</span>
+            </div>
+        </div>
+    }
+    else if (imports.Count == 0)
+    {
+        <div class="alert alert-info" role="alert">
+            No imports have been started yet. Create your first import to begin.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>File Name</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Records</th>
+                        <th>Processed</th>
+                        <th>Failed</th>
+                        <th>Progress</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var import in imports)
+                    {
+                        var progress = import.TotalRecords > 0 ? (import.ProcessedRecords * 100 / import.TotalRecords) : 0;
+                        <tr>
+                            <td>@import.FileName</td>
+                            <td><span class="badge bg-info">@import.ImportType</span></td>
+                            <td>
+                                @switch (import.Status)
+                                {
+                                    case "pending":
+                                        <span class="badge bg-warning">Pending</span>
+                                        break;
+                                    case "processing":
+                                        <span class="badge bg-primary">Processing</span>
+                                        break;
+                                    case "completed":
+                                        <span class="badge bg-success">Completed</span>
+                                        break;
+                                    case "failed":
+                                        <span class="badge bg-danger">Failed</span>
+                                        break;
+                                }
+                            </td>
+                            <td>@import.TotalRecords</td>
+                            <td>@import.ProcessedRecords</td>
+                            <td>@import.FailedRecords</td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar" role="progressbar" style="width: @progress%" aria-valuenow="@progress" aria-valuemin="0" aria-valuemax="100">
+                                        @progress%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                @if (import.Status == "pending")
+                                {
+                                    <button class="btn btn-sm btn-success" @onclick="() => ProcessImport(import.Id)">Process</button>
+                                }
+                                <button class="btn btn-sm btn-info" @onclick="() => ViewImportDetails(import.Id)">Details</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (message != null)
+    {
+        <div class="alert alert-@messageType alert-dismissible fade show" role="alert">
+            @message
+            <button type="button" class="btn-close" @onclick="() => message = null"></button>
+        </div>
+    }
+</div>
+
+@code {
+    private List<ImportJobDto>? imports;
+    private string? newImportType = "conversations";
+    private string? newFileName = "";
+    private ElementReference fileInput;
+    private bool showUploadForm = false;
+    private string? message;
+    private string messageType = "info";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadImports();
+    }
+
+    private async Task LoadImports()
+    {
+        try
+        {
+            imports = await ImportService.GetImportJobsAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Error loading imports: {ex.Message}");
+            message = "Failed to load imports";
+            messageType = "danger";
+        }
+    }
+
+    private void ShowUploadForm()
+    {
+        newImportType = "conversations";
+        newFileName = "";
+        showUploadForm = true;
+    }
+
+    private void CancelUploadForm()
+    {
+        showUploadForm = false;
+    }
+
+    private async Task StartImport()
+    {
+        if (string.IsNullOrWhiteSpace(newImportType))
+        {
+            message = "Import type is required";
+            messageType = "warning";
+            return;
+        }
+
+        var request = new StartImportRequest(
+            ImportType: newImportType,
+            FileSize: 0, // Would come from file input in real implementation
+            FileName: newFileName
+        );
+
+        var result = await ImportService.StartImportAsync(request);
+        if (result != null)
+        {
+            message = "Import started successfully";
+            messageType = "success";
+            showUploadForm = false;
+            await LoadImports();
+        }
+        else
+        {
+            message = "Failed to start import";
+            messageType = "danger";
+        }
+    }
+
+    private async Task ProcessImport(int jobId)
+    {
+        var success = await ImportService.ProcessImportAsync(jobId);
+        if (success)
+        {
+            message = "Import processing started";
+            messageType = "success";
+            await LoadImports();
+        }
+        else
+        {
+            message = "Failed to process import";
+            messageType = "danger";
+        }
+    }
+
+    private async Task ViewImportDetails(int jobId)
+    {
+        var details = await ImportService.GetImportJobStatusAsync(jobId);
+        if (details != null)
+        {
+            message = $"Import: {details.FileName} - {details.ProcessedRecords}/{details.TotalRecords} records processed";
+            messageType = "info";
+        }
+        else
+        {
+            message = "Failed to load import details";
+            messageType = "danger";
+        }
+    }
+}
