@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components
+@using Chatbot.Web.Services
 @attribute [Authorize]
 
 <PageTitle>Home</PageTitle>
@@ -140,7 +141,7 @@
     private NavigationManager Navigation { get; set; } = null!;
 
     private List<ConversationResponse> conversations = new();
-    private ConversationAnalytics? analytics;
+    private Chatbot.Web.Services.ConversationAnalytics? analytics;
     private string newConversationTitle = "";
     private string? errorMessage;
     private string? conversationError;

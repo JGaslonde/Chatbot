@@ -4,17 +4,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Chatbot.API.Infrastructure.Validation;
 
-/// <summary>
-/// Provides utility methods for common validation operations.
-/// Applies DRY - Consolidates repeated validation checks throughout services.
-/// </summary>
-public interface IEntityValidator
-{
-    Task EnsureUserExistsAsync(int userId);
-    Task EnsureConversationExistsAsync(int conversationId);
-    Task<T> EnsureEntityExistsAsync<T>(int id, Func<int, Task<T?>> getter, string entityName);
-}
-
 public class EntityValidator : IEntityValidator
 {
     private readonly IUserContextProvider _userContext;
@@ -36,6 +25,8 @@ public class EntityValidator : IEntityValidator
             _logger.LogWarning("Invalid user ID: {UserId}", userId);
             throw new UnauthorizedException("Invalid user");
         }
+
+        await Task.CompletedTask;
     }
 
     public async Task EnsureConversationExistsAsync(int conversationId)
@@ -45,14 +36,22 @@ public class EntityValidator : IEntityValidator
             _logger.LogWarning("Invalid conversation ID: {ConversationId}", conversationId);
             throw new NotFoundException("Conversation", conversationId);
         }
+
+        await Task.CompletedTask;
     }
 
     public async Task<T> EnsureEntityExistsAsync<T>(int id, Func<int, Task<T?>> getter, string entityName)
     {
+        if (id <= 0)
+        {
+            _logger.LogWarning("Invalid {EntityName} ID: {Id}", entityName, id);
+            throw new NotFoundException(entityName, id);
+        }
+
         var entity = await getter(id);
         if (entity == null)
         {
-            _logger.LogWarning("Entity not found. Type: {EntityName}, ID: {Id}", entityName, id);
+            _logger.LogWarning("{EntityName} not found. ID: {Id}", entityName, id);
             throw new NotFoundException(entityName, id);
         }
 

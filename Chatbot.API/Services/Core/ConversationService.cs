@@ -2,20 +2,9 @@ using Chatbot.Core.Models.Entities;
 using Chatbot.API.Data.Repositories;
 using Chatbot.API.Services.Analysis;
 using Chatbot.API.Services.Processing;
+using Microsoft.Extensions.Logging;
 
 namespace Chatbot.API.Services.Core;
-
-public interface IConversationService
-{
-    Task<Conversation> CreateConversationAsync(int userId, string? title = null);
-    Task<Conversation?> GetConversationAsync(int conversationId);
-    Task<IEnumerable<Conversation>> GetUserConversationsAsync(int userId);
-    Task<Message> AddMessageAsync(int conversationId, string content, MessageSender sender);
-    Task<IEnumerable<Message>> GetConversationHistoryAsync(int conversationId);
-    Task<bool> UpdateConversationAsync(int conversationId, string? title = null);
-    Task<string> GenerateBotResponseAsync(int conversationId, string userMessage);
-    Task UpdateConversationSummaryAsync(int conversationId);
-}
 
 public class ConversationService : IConversationService
 {
@@ -82,21 +71,16 @@ public class ConversationService : IConversationService
 
     public async Task<Message> AddMessageAsync(int conversationId, string content, MessageSender sender)
     {
-        _logger.LogInformation("Adding message to conversation {ConversationId}. Sender: {Sender}", conversationId, sender);
-
-        // Get conversation
-        var conversation = await _conversationRepository.GetByIdAsync(conversationId);
+        var conversation = await GetConversationAsync(conversationId);
         if (conversation == null)
             throw new InvalidOperationException("Conversation not found");
 
-        // Analyze message
         var analysis = await _messageAnalytics.AnalyzeMessageAsync(content);
 
-        // Create message
         var message = new Message
         {
             ConversationId = conversationId,
-            Content = analysis.CleanContent,
+            Content = content,
             Sender = sender,
             SentAt = DateTime.UtcNow,
             Sentiment = analysis.Sentiment,
@@ -104,18 +88,14 @@ public class ConversationService : IConversationService
             DetectedIntent = analysis.Intent,
             IntentConfidence = analysis.IntentConfidence,
             IsFiltered = analysis.IsFiltered,
-            FilterReason = analysis.FilterReason,
             Conversation = conversation
         };
 
-        await _messageRepository.AddAsync(message);
-
-        // Update conversation
+        var savedMessage = await _messageRepository.AddAsync(message);
         conversation.LastMessageAt = DateTime.UtcNow;
-        conversation.Summary = $"Last message: {analysis.CleanContent} ({analysis.Sentiment})";
         await _conversationRepository.UpdateAsync(conversation);
 
-        return message;
+        return savedMessage;
     }
 
     public async Task<IEnumerable<Message>> GetConversationHistoryAsync(int conversationId)
@@ -125,7 +105,7 @@ public class ConversationService : IConversationService
 
     public async Task<bool> UpdateConversationAsync(int conversationId, string? title = null)
     {
-        var conversation = await _conversationRepository.GetByIdAsync(conversationId);
+        var conversation = await GetConversationAsync(conversationId);
         if (conversation == null)
             return false;
 
@@ -138,48 +118,32 @@ public class ConversationService : IConversationService
 
     public async Task<string> GenerateBotResponseAsync(int conversationId, string userMessage)
     {
-        _logger.LogInformation("Generating bot response for conversation {ConversationId}", conversationId);
-
-        // Get conversation with recent messages
-        var conversation = await _conversationRepository.GetWithMessagesAsync(conversationId);
+        var conversation = await GetConversationAsync(conversationId);
         if (conversation == null)
             throw new InvalidOperationException("Conversation not found");
 
-        // Get recent messages for context
-        var recentMessages = conversation.Messages
-            .OrderByDescending(m => m.SentAt)
-            .Take(10)
-            .OrderBy(m => m.SentAt)
-            .ToList();
-
-        // Analyze user message
         var analysis = await _messageAnalytics.AnalyzeMessageAsync(userMessage);
+        var recentMessages = (await GetConversationHistoryAsync(conversationId)).ToList();
 
-        // Generate context-aware response
         var response = _responseTemplateService.GenerateContextAwareResponse(
-            userMessage, recentMessages, analysis.Intent ?? "unknown", analysis.Sentiment);
+            userMessage,
+            recentMessages,
+            analysis.Intent ?? "unknown",
+            analysis.Sentiment
+        );
 
         return response;
     }
 
     public async Task UpdateConversationSummaryAsync(int conversationId)
     {
-        var conversation = await _conversationRepository.GetWithMessagesAsync(conversationId);
+        var conversation = await GetConversationAsync(conversationId);
         if (conversation == null)
             return;
 
-        var messages = conversation.Messages.OrderBy(m => m.SentAt).ToList();
-
-        // Generate summary and title
-        var summary = _summarizationService.GenerateSummary(messages);
-        var title = _summarizationService.GenerateTitle(messages);
-
-        // Update conversation
-        conversation.Summary = summary;
-        if (string.IsNullOrWhiteSpace(conversation.Title) || conversation.Title.StartsWith("Conversation"))
-        {
-            conversation.Title = title;
-        }
+        var messages = (await GetConversationHistoryAsync(conversationId)).ToList();
+        conversation.Summary = _summarizationService.GenerateSummary(messages);
+        conversation.Title = _summarizationService.GenerateTitle(messages);
 
         await _conversationRepository.UpdateAsync(conversation);
     }

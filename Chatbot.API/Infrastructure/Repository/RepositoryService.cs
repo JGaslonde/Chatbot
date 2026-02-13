@@ -1,18 +1,8 @@
 using Chatbot.API.Data.Repositories;
 using Chatbot.API.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace Chatbot.API.Infrastructure.Repository;
-
-/// <summary>
-/// Generic service for repository operations with built-in error handling.
-/// Applies DRY - Eliminates repeated null-check and exception patterns in services.
-/// Implements Dependency Inversion - Services depend on this abstraction.
-/// </summary>
-public interface IRepositoryService<T> where T : class
-{
-    Task<T> GetByIdOrThrowAsync(int id, string entityName);
-    Task<T?> GetByIdOrDefaultAsync(int id);
-}
 
 public class RepositoryService<T> : IRepositoryService<T> where T : class
 {

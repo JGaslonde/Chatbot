@@ -2,11 +2,6 @@ using Chatbot.Core.Models.Entities;
 
 namespace Chatbot.API.Services.Analysis;
 
-public interface ISentimentAnalysisService
-{
-    Task<(Sentiment Sentiment, double Score)> AnalyzeSentimentAsync(string text);
-}
-
 public class SimpleSentimentAnalysisService : ISentimentAnalysisService
 {
     private readonly Dictionary<string, Sentiment> _sentimentWords = new()

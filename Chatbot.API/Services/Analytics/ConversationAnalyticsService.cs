@@ -1,15 +1,8 @@
 using Chatbot.API.Data.Repositories;
+using Chatbot.Core.Models;
 using Chatbot.Core.Models.Entities;
-using Microsoft.EntityFrameworkCore;
 
 namespace Chatbot.API.Services.Analytics;
-
-public interface IConversationAnalyticsService
-{
-    Task<ConversationAnalytics> GetAnalyticsAsync(int? userId = null, DateTime? startDate = null, DateTime? endDate = null);
-    Task<List<SentimentTrend>> GetSentimentTrendsAsync(int userId, int days = 7);
-    Task<List<IntentDistribution>> GetIntentDistributionAsync(int userId, int days = 30);
-}
 
 public class ConversationAnalyticsService : IConversationAnalyticsService
 {
@@ -27,12 +20,6 @@ public class ConversationAnalyticsService : IConversationAnalyticsService
         _userRepository = userRepository;
     }
 
-    /// <summary>
-    /// Gets conversation analytics for the specified user and date range.
-    /// NOTE: This method should always be called with a valid userId from the authenticated user's context.
-    /// The userId parameter is required - passing null would return analytics across all users, which should
-    /// only be allowed for admin users with appropriate authorization checks at the controller level.
-    /// </summary>
     public async Task<ConversationAnalytics> GetAnalyticsAsync(int? userId = null, DateTime? startDate = null, DateTime? endDate = null)
     {
         var start = startDate ?? DateTime.UtcNow.AddDays(-30);
@@ -41,7 +28,7 @@ public class ConversationAnalyticsService : IConversationAnalyticsService
         var messagesQuery = (await _messageRepository.GetAllAsync())
             .Where(m => m.SentAt >= start && m.SentAt <= end);
 
-        // Filter by user - should always be provided from authenticated context
+        // Filter by user if provided
         if (userId.HasValue)
         {
             var userConversationIds = (await _conversationRepository.GetAllAsync())
@@ -78,64 +65,39 @@ public class ConversationAnalyticsService : IConversationAnalyticsService
             .GroupBy(m => m.DetectedIntent)
             .ToDictionary(g => g.Key ?? "unknown", g => g.Count());
 
-        // Active conversations
-        var conversationsQuery = (await _conversationRepository.GetAllAsync())
-            .Where(c => c.LastMessageAt >= start && c.LastMessageAt <= end);
-
-        if (userId.HasValue)
-        {
-            conversationsQuery = conversationsQuery.Where(c => c.UserId == userId.Value);
-        }
-
-        var activeConversations = conversationsQuery.Count();
-
-        // Active users
-        var activeUsers = userId.HasValue
-            ? 1
-            : (await _conversationRepository.GetAllAsync())
-                .Where(c => c.LastMessageAt >= start && c.LastMessageAt <= end)
-                .Select(c => c.UserId)
-                .Distinct()
-                .Count();
-
         return new ConversationAnalytics
         {
-            StartDate = start,
-            EndDate = end,
             TotalMessages = totalMessages,
-            UserMessages = userMessages,
-            BotMessages = botMessages,
-            AverageSentiment = Math.Round(avgSentiment, 2),
+            UserMessageCount = userMessages,
+            BotMessageCount = botMessages,
+            AverageSentimentScore = avgSentiment,
             SentimentDistribution = sentimentDist,
             IntentDistribution = intentDist,
-            ActiveConversations = activeConversations,
-            ActiveUsers = activeUsers
+            DateRange = new DateRange { Start = start, End = end }
         };
     }
 
     public async Task<List<SentimentTrend>> GetSentimentTrendsAsync(int userId, int days = 7)
     {
-        var startDate = DateTime.UtcNow.AddDays(-days);
         var userConversationIds = (await _conversationRepository.GetAllAsync())
             .Where(c => c.UserId == userId)
             .Select(c => c.Id)
             .ToList();
 
+        var startDate = DateTime.UtcNow.AddDays(-days);
         var messages = (await _messageRepository.GetAllAsync())
-            .Where(m => userConversationIds.Contains(m.ConversationId)
-                     && m.Sender == MessageSender.User
-                     && m.SentAt >= startDate)
+            .Where(m => m.SentAt >= startDate && userConversationIds.Contains(m.ConversationId) && m.Sender == MessageSender.User)
             .ToList();
 
         var trends = messages
             .GroupBy(m => m.SentAt.Date)
+            .OrderBy(g => g.Key)
             .Select(g => new SentimentTrend
             {
                 Date = g.Key,
-                AverageSentiment = Math.Round(g.Average(m => m.SentimentScore), 2),
+                AvergeSentiment = g.Average(m => m.SentimentScore),
                 MessageCount = g.Count()
             })
-            .OrderBy(t => t.Date)
             .ToList();
 
         return trends;
@@ -143,58 +105,28 @@ public class ConversationAnalyticsService : IConversationAnalyticsService
 
     public async Task<List<IntentDistribution>> GetIntentDistributionAsync(int userId, int days = 30)
     {
-        var startDate = DateTime.UtcNow.AddDays(-days);
         var userConversationIds = (await _conversationRepository.GetAllAsync())
             .Where(c => c.UserId == userId)
             .Select(c => c.Id)
             .ToList();
 
+        var startDate = DateTime.UtcNow.AddDays(-days);
         var messages = (await _messageRepository.GetAllAsync())
-            .Where(m => userConversationIds.Contains(m.ConversationId)
-                     && m.Sender == MessageSender.User
-                     && m.SentAt >= startDate
-                     && !string.IsNullOrEmpty(m.DetectedIntent))
+            .Where(m => m.SentAt >= startDate && userConversationIds.Contains(m.ConversationId) && m.Sender == MessageSender.User)
             .ToList();
 
         var distribution = messages
+            .Where(m => !string.IsNullOrEmpty(m.DetectedIntent))
             .GroupBy(m => m.DetectedIntent)
             .Select(g => new IntentDistribution
             {
                 Intent = g.Key ?? "unknown",
                 Count = g.Count(),
-                Percentage = messages.Count > 0 ? Math.Round((double)g.Count() / messages.Count * 100, 1) : 0
+                Percentage = (g.Count() / (double)messages.Count) * 100
             })
-            .OrderByDescending(i => i.Count)
+            .OrderByDescending(x => x.Count)
             .ToList();
 
         return distribution;
     }
-}
-
-public class ConversationAnalytics
-{
-    public DateTime StartDate { get; set; }
-    public DateTime EndDate { get; set; }
-    public int TotalMessages { get; set; }
-    public int UserMessages { get; set; }
-    public int BotMessages { get; set; }
-    public double AverageSentiment { get; set; }
-    public Dictionary<string, int> SentimentDistribution { get; set; } = new();
-    public Dictionary<string, int> IntentDistribution { get; set; } = new();
-    public int ActiveConversations { get; set; }
-    public int ActiveUsers { get; set; }
-}
-
-public class SentimentTrend
-{
-    public DateTime Date { get; set; }
-    public double AverageSentiment { get; set; }
-    public int MessageCount { get; set; }
-}
-
-public class IntentDistribution
-{
-    public string Intent { get; set; } = string.Empty;
-    public int Count { get; set; }
-    public double Percentage { get; set; }
 }

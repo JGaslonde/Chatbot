@@ -7,14 +7,6 @@ using System.Text;
 
 namespace Chatbot.API.Services.Core;
 
-public interface IAuthenticationService
-{
-    Task<(bool Success, string Token, string Message, User? User)> RegisterAsync(string username, string email, string password);
-    Task<(bool Success, string Token, string Message, User? User)> LoginAsync(string username, string password);
-    Task<User?> ValidateTokenAsync(string token);
-    string GenerateToken(User user);
-}
-
 public class AuthenticationService : IAuthenticationService
 {
     private readonly IUserRepository _userRepository;
@@ -107,22 +99,19 @@ public class AuthenticationService : IAuthenticationService
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not configured"));
 
-        // Parse expire minutes with proper error handling
-        if (!double.TryParse(_configuration["Jwt:ExpireMinutes"], out double expireMinutes))
+        var claims = new List<Claim>
         {
-            expireMinutes = 1440; // Default to 24 hours if parsing fails
-        }
+            new Claim("id", user.Id.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Name, user.Username),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim("displayName", user.DisplayName ?? user.Username)
+        };
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(new[]
-            {
-                new Claim("id", user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            }),
-            Expires = DateTime.UtcNow.AddMinutes(expireMinutes),
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddHours(int.TryParse(_configuration["Jwt:ExpiaryInHours"], out var hours) ? hours : 24),
             Issuer = _configuration["Jwt:Issuer"],
             Audience = _configuration["Jwt:Audience"],
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)

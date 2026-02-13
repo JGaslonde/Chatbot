@@ -1,18 +1,8 @@
 using Chatbot.API.Exceptions;
 using Chatbot.API.Services.Core;
+using Microsoft.Extensions.Logging;
 
 namespace Chatbot.API.Infrastructure.Authorization;
-
-/// <summary>
-/// Handles conversation access control and authorization checks.
-/// Applies DRY - Centralizes repeated authorization logic.
-/// Single Responsibility - Focuses solely on authorization concerns.
-/// </summary>
-public interface IConversationAccessControl
-{
-    Task<bool> HasAccessAsync(int conversationId, int userId);
-    Task VerifyAccessAsync(int conversationId, int userId);
-}
 
 public class ConversationAccessControl : IConversationAccessControl
 {

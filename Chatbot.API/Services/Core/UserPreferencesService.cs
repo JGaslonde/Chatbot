@@ -1,15 +1,7 @@
 using Chatbot.API.Data.Repositories;
 using Chatbot.Core.Models.Entities;
-using Microsoft.EntityFrameworkCore;
 
 namespace Chatbot.API.Services.Core;
-
-public interface IUserPreferencesService
-{
-    Task<UserPreferences> GetPreferencesAsync(int userId);
-    Task<UserPreferences> UpdatePreferencesAsync(int userId, UserPreferences preferences);
-    Task<UserPreferences> CreateDefaultPreferencesAsync(int userId);
-}
 
 public class UserPreferencesService : IUserPreferencesService
 {
@@ -85,17 +77,17 @@ public class UserPreferencesService : IUserPreferencesService
         {
             UserId = userId,
             User = user,
-            Language = "en",
+            Language = "en-US",
             Theme = "light",
             TimeZone = "UTC",
             EmailNotifications = true,
             PushNotifications = true,
             SoundEnabled = true,
-            ResponseStyle = "balanced",
-            ShowSentimentAnalysis = false,
-            ShowIntentRecognition = false,
+            ResponseStyle = "friendly",
+            ShowSentimentAnalysis = true,
+            ShowIntentRecognition = true,
             SaveConversationHistory = true,
-            AllowDataAnalytics = true,
+            AllowDataAnalytics = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };

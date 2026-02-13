@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components
+@using Chatbot.Web.Services
 @attribute [Authorize]
 
 <PageTitle>Analytics</PageTitle>
@@ -290,8 +291,8 @@
     [Inject]
     private IAnalyticsService AnalyticsService { get; set; } = null!;
 
-    private ConversationAnalytics? analytics;
-    private List<SentimentTrend> sentimentTrends = new();
+    private Chatbot.Web.Services.ConversationAnalytics? analytics;
+    private List<Chatbot.Web.Services.SentimentTrend> sentimentTrends = new();
     private string? errorMessage;
     private bool isLoading;
 

@@ -1,36 +1,7 @@
-using Chatbot.Core.Models.Entities;
 using Chatbot.API.Services.Processing;
 using Microsoft.Extensions.Logging;
 
 namespace Chatbot.API.Services.Analysis;
-
-/// <summary>
-/// Handles message analysis operations (sentiment, intent, filtering).
-/// Implements Single Responsibility Principle - Focus only on message analysis.
-/// Applies DRY - Consolidates message analysis logic used across the application.
-/// </summary>
-public interface IMessageAnalyticsService
-{
-    /// <summary>
-    /// Analyzes a message for sentiment and intent, applies filtering.
-    /// Returns analyzed message with all metadata.
-    /// </summary>
-    Task<MessageAnalysisResult> AnalyzeMessageAsync(string content);
-}
-
-/// <summary>
-/// Result of message analysis containing all extracted data.
-/// </summary>
-public class MessageAnalysisResult
-{
-    public string CleanContent { get; set; } = string.Empty;
-    public bool IsFiltered { get; set; }
-    public string? FilterReason { get; set; }
-    public Sentiment Sentiment { get; set; }
-    public double SentimentScore { get; set; }
-    public string? Intent { get; set; }
-    public double IntentConfidence { get; set; }
-}
 
 public class MessageAnalyticsService : IMessageAnalyticsService
 {

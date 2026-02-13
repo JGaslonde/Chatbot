@@ -1,10 +1,5 @@
 namespace Chatbot.API.Services.Analysis;
 
-public interface IIntentRecognitionService
-{
-    Task<(string Intent, double Confidence)> RecognizeIntentAsync(string text);
-}
-
 public class SimpleIntentRecognitionService : IIntentRecognitionService
 {
     private readonly Dictionary<string, List<string>> _intentPatterns = new()

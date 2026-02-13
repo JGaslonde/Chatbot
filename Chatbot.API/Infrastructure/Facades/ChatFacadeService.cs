@@ -1,38 +1,11 @@
-using Chatbot.API.Services.Core;
 using Chatbot.API.Services.Analytics;
+using Chatbot.API.Services.Core;
 using Chatbot.API.Services.Export;
 using Chatbot.Core.Models;
 using Chatbot.Core.Models.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace Chatbot.API.Infrastructure.Facades;
-
-/// <summary>
-/// Facade service that coordinates multiple specialized services.
-/// Implements Facade Pattern - Reduces controller dependencies and provides simple interface.
-/// Applies Single Responsibility - Controllers only depend on this facade, not multiple services.
-/// Dependency Inversion - Controllers depend on abstraction, not concrete services.
-/// </summary>
-public interface IChatFacadeService
-{
-    // Conversation operations
-    Task<Conversation> CreateConversationAsync(int userId, string? title = null);
-    Task<Conversation?> GetConversationAsync(int conversationId);
-    Task<ChatMessageResponse> SendMessageAsync(int conversationId, string userMessage);
-    Task<MessageHistoryResponse> GetConversationHistoryAsync(int conversationId);
-
-    // Data export operations
-    Task<byte[]> ExportConversationJsonAsync(int conversationId);
-    Task<byte[]> ExportConversationCsvAsync(int conversationId);
-
-    // Analytics operations
-    Task<ConversationAnalytics> GetAnalyticsAsync(int userId, DateTime? startDate = null, DateTime? endDate = null);
-    Task<List<SentimentTrend>> GetSentimentTrendsAsync(int userId, int days = 7);
-    Task<List<IntentDistribution>> GetIntentDistributionAsync(int userId, int days = 30);
-
-    // User preferences operations
-    Task<UserPreferences> GetPreferencesAsync(int userId);
-    Task<UserPreferences> UpdatePreferencesAsync(int userId, UserPreferences preferences);
-}
 
 public class ChatFacadeService : IChatFacadeService
 {
@@ -72,46 +45,43 @@ public class ChatFacadeService : IChatFacadeService
     {
         _logger.LogInformation("Sending message to conversation {ConversationId}", conversationId);
 
+        // Add user message
         var userMsg = await _conversationService.AddMessageAsync(conversationId, userMessage, MessageSender.User);
+
+        // Generate bot response
         var botResponse = await _conversationService.GenerateBotResponseAsync(conversationId, userMessage);
         var botMsg = await _conversationService.AddMessageAsync(conversationId, botResponse, MessageSender.Bot);
 
-        if (conversationId % 5 == 0)
-        {
-            await _conversationService.UpdateConversationSummaryAsync(conversationId);
-        }
-
         return new ChatMessageResponse(
-            botMsg.Content,
-            botMsg.SentAt,
-            botMsg.DetectedIntent ?? "unknown",
-            botMsg.IntentConfidence,
-            botMsg.Sentiment.ToString(),
-            botMsg.SentimentScore,
-            conversationId);
+            Message: botResponse,
+            Timestamp: botMsg.SentAt,
+            Intent: botMsg.DetectedIntent ?? "Unknown",
+            IntentConfidence: botMsg.IntentConfidence,
+            Sentiment: botMsg.Sentiment.ToString(),
+            SentimentScore: botMsg.SentimentScore,
+            ConversationId: conversationId
+        );
     }
 
     public async Task<MessageHistoryResponse> GetConversationHistoryAsync(int conversationId)
     {
-        _logger.LogInformation("Retrieving history for conversation {ConversationId}", conversationId);
-        var conversation = await _conversationService.GetConversationAsync(conversationId);
-
-        if (conversation == null)
-            throw new InvalidOperationException($"Conversation {conversationId} not found");
-
-        var messageDtos = conversation.Messages
-            .OrderBy(m => m.SentAt)
-            .Select(m => new MessageDto(
-                m.Id,
-                m.Content,
-                m.Sender.ToString(),
-                m.SentAt,
-                m.Sentiment.ToString(),
-                m.DetectedIntent,
-                m.SentimentScore))
-            .ToList();
-
-        return new MessageHistoryResponse(conversationId, messageDtos);
+        _logger.LogInformation("Retrieving conversation history for {ConversationId}", conversationId);
+        var messages = await _conversationService.GetConversationHistoryAsync(conversationId);
+        
+        var messageDtos = messages.Select(m => new MessageDto(
+            Id: m.Id,
+            Content: m.Content,
+            Sender: m.Sender.ToString(),
+            SentAt: m.SentAt,
+            Sentiment: m.Sentiment.ToString(),
+            Intent: m.DetectedIntent,
+            SentimentScore: m.SentimentScore
+        )).ToList();
+        
+        return new MessageHistoryResponse(
+            ConversationId: conversationId,
+            Messages: messageDtos
+        );
     }
 
     public async Task<byte[]> ExportConversationJsonAsync(int conversationId)
@@ -128,25 +98,25 @@ public class ChatFacadeService : IChatFacadeService
 
     public async Task<ConversationAnalytics> GetAnalyticsAsync(int userId, DateTime? startDate = null, DateTime? endDate = null)
     {
-        _logger.LogInformation("Retrieving analytics for user {UserId}", userId);
+        _logger.LogInformation("Getting analytics for user {UserId}", userId);
         return await _analyticsService.GetAnalyticsAsync(userId, startDate, endDate);
     }
 
     public async Task<List<SentimentTrend>> GetSentimentTrendsAsync(int userId, int days = 7)
     {
-        _logger.LogInformation("Retrieving sentiment trends for user {UserId}", userId);
+        _logger.LogInformation("Getting sentiment trends for user {UserId}", userId);
         return await _analyticsService.GetSentimentTrendsAsync(userId, days);
     }
 
     public async Task<List<IntentDistribution>> GetIntentDistributionAsync(int userId, int days = 30)
     {
-        _logger.LogInformation("Retrieving intent distribution for user {UserId}", userId);
+        _logger.LogInformation("Getting intent distribution for user {UserId}", userId);
         return await _analyticsService.GetIntentDistributionAsync(userId, days);
     }
 
     public async Task<UserPreferences> GetPreferencesAsync(int userId)
     {
-        _logger.LogInformation("Retrieving preferences for user {UserId}", userId);
+        _logger.LogInformation("Getting preferences for user {UserId}", userId);
         return await _preferencesService.GetPreferencesAsync(userId);
     }
 

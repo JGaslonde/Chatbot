@@ -3,18 +3,6 @@ using Chatbot.API.Exceptions;
 
 namespace Chatbot.API.Infrastructure.Auth;
 
-/// <summary>
-/// Provides user context extraction from HTTP context.
-/// Implements Dependency Inversion - Controllers depend on this abstraction, not directly on ClaimsPrincipal.
-/// Applies DRY - User ID extraction logic centralized in one place.
-/// </summary>
-public interface IUserContextProvider
-{
-    int GetUserId();
-    string GetUsername();
-    bool TryGetUserId(out int userId);
-}
-
 public class UserContextProvider : IUserContextProvider
 {
     private readonly IHttpContextAccessor _httpContextAccessor;

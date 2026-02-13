@@ -1,9 +1,6 @@
-namespace Chatbot.API.Services.Processing;
+using System.Text.RegularExpressions;
 
-public interface IMessageFilterService
-{
-    Task<(bool IsClean, List<string> Issues)> FilterMessageAsync(string message);
-}
+namespace Chatbot.API.Services.Processing;
 
 public class MessageFilterService : IMessageFilterService
 {
@@ -55,7 +52,7 @@ public class MessageFilterService : IMessageFilterService
         }
 
         // Check for repeated characters (spam indicator)
-        if (System.Text.RegularExpressions.Regex.IsMatch(message, @"(.)\1{4,}"))
+        if (Regex.IsMatch(message, @"(.)\1{4,}"))
         {
             issues.Add("Message contains excessive character repetition");
         }

@@ -1,17 +1,8 @@
 using System.Text;
 using System.Text.Json;
 using Chatbot.API.Data.Repositories;
-using Chatbot.Core.Models.Entities;
 
 namespace Chatbot.API.Services.Export;
-
-public interface IConversationExportService
-{
-    Task<string> ExportToJsonAsync(int conversationId);
-    Task<string> ExportToCsvAsync(int conversationId);
-    Task<byte[]> ExportToJsonBytesAsync(int conversationId);
-    Task<byte[]> ExportToCsvBytesAsync(int conversationId);
-}
 
 public class ConversationExportService : IConversationExportService
 {
@@ -27,6 +18,16 @@ public class ConversationExportService : IConversationExportService
     }
 
     public async Task<string> ExportToJsonAsync(int conversationId)
+    {
+        return Encoding.UTF8.GetString(await ExportToJsonBytesAsync(conversationId));
+    }
+
+    public async Task<string> ExportToCsvAsync(int conversationId)
+    {
+        return Encoding.UTF8.GetString(await ExportToCsvBytesAsync(conversationId));
+    }
+
+    public async Task<byte[]> ExportToJsonBytesAsync(int conversationId)
     {
         var conversation = await _conversationRepository.GetByIdAsync(conversationId);
         if (conversation == null)
@@ -60,13 +61,15 @@ public class ConversationExportService : IConversationExportService
             ExportedAt = DateTime.UtcNow.ToString("o")
         };
 
-        return JsonSerializer.Serialize(export, new JsonSerializerOptions
+        var json = JsonSerializer.Serialize(export, new JsonSerializerOptions
         {
             WriteIndented = true
         });
+
+        return Encoding.UTF8.GetBytes(json);
     }
 
-    public async Task<string> ExportToCsvAsync(int conversationId)
+    public async Task<byte[]> ExportToCsvBytesAsync(int conversationId)
     {
         var conversation = await _conversationRepository.GetByIdAsync(conversationId);
         if (conversation == null)
@@ -78,42 +81,38 @@ public class ConversationExportService : IConversationExportService
             .ToList();
 
         var csv = new StringBuilder();
+        csv.AppendLine("Conversation Export");
+        csv.AppendLine($"Title,{CsvEscape(conversation.Title)}");
+        csv.AppendLine($"Started At,{conversation.StartedAt:yyyy-MM-dd HH:mm:ss}");
+        csv.AppendLine($"Last Message,{conversation.LastMessageAt:yyyy-MM-dd HH:mm:ss}");
+        csv.AppendLine($"Message Count,{messages.Count}");
+        csv.AppendLine();
 
-        // Header
-        csv.AppendLine("MessageId,Sender,Content,SentAt,Sentiment,SentimentScore,DetectedIntent,IntentConfidence");
-
-        // Data rows
+        csv.AppendLine("Timestamp,Sender,Content,Sentiment,SentimentScore,Intent,IntentConfidence");
         foreach (var message in messages)
         {
-            var content = EscapeCsvField(message.Content);
-            var sentAt = message.SentAt.ToString("o");
-            var sentiment = message.Sentiment.ToString();
-            var intent = message.DetectedIntent ?? "";
-
-            csv.AppendLine($"{message.Id},{message.Sender},{content},{sentAt},{sentiment},{message.SentimentScore},{intent},{message.IntentConfidence}");
+            csv.AppendLine($"{message.SentAt:yyyy-MM-dd HH:mm:ss}," +
+                          $"{message.Sender}," +
+                          $"{CsvEscape(message.Content)}," +
+                          $"{message.Sentiment}," +
+                          $"{message.SentimentScore:F2}," +
+                          $"{message.DetectedIntent ?? "N/A"}," +
+                          $"{message.IntentConfidence:F2}");
         }
 
-        return csv.ToString();
+        return Encoding.UTF8.GetBytes(csv.ToString());
     }
 
-    public async Task<byte[]> ExportToJsonBytesAsync(int conversationId)
+    private string CsvEscape(string value)
     {
-        var json = await ExportToJsonAsync(conversationId);
-        return Encoding.UTF8.GetBytes(json);
-    }
+        if (string.IsNullOrEmpty(value))
+            return "";
 
-    public async Task<byte[]> ExportToCsvBytesAsync(int conversationId)
-    {
-        var csv = await ExportToCsvAsync(conversationId);
-        return Encoding.UTF8.GetBytes(csv);
-    }
-
-    private static string EscapeCsvField(string field)
-    {
-        if (field.Contains(',') || field.Contains('"') || field.Contains('\n'))
+        if (value.Contains(",") || value.Contains("\"") || value.Contains("\n"))
         {
-            return $"\"{field.Replace("\"", "\"\"")}\"";
+            return $"\"{value.Replace("\"", "\"\"")}\"";
         }
-        return field;
+
+        return value;
     }
 }
