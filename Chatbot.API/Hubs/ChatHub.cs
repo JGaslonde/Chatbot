@@ -163,7 +163,7 @@ public class ChatHub : Hub
     public async Task BroadcastImportProgress(int importJobId, int processed, int total, int failed)
     {
         var progressPercentage = total > 0 ? (processed * 100 / total) : 0;
-        
+
         await Clients.Group($"import_{importJobId}")
             .SendAsync("ImportProgress", new
             {
@@ -175,7 +175,7 @@ public class ChatHub : Hub
                 Timestamp = DateTime.UtcNow
             });
 
-        _logger.LogInformation("Import {ImportJobId} progress broadcasted: {Processed}/{Total} ({Percentage}%)", 
+        _logger.LogInformation("Import {ImportJobId} progress broadcasted: {Processed}/{Total} ({Percentage}%)",
             importJobId, processed, total, progressPercentage);
     }
 

@@ -134,6 +134,19 @@ builder.Services.AddScoped<Repository<TwoFactorAuth>>();
 builder.Services.AddScoped<Repository<IpWhitelist>>();
 builder.Services.AddScoped<Repository<ScheduledReport>>();
 builder.Services.AddScoped<Repository<ImportJob>>();
+// Phase 3 Advanced Features repositories
+builder.Services.AddScoped<IConversationAnalyticsRepository, ConversationAnalyticsRepository>();
+builder.Services.AddScoped<IMLInsightRepository, MLInsightRepository>();
+builder.Services.AddScoped<IWorkflowRepository, WorkflowRepository>();
+builder.Services.AddScoped<IUserSegmentRepository, UserSegmentRepository>();
+builder.Services.AddScoped<ISearchIndexRepository, SearchIndexRepository>();
+// Phase 3 generic repositories
+builder.Services.AddScoped<Repository<ConversationAnalyticsEntity>>();
+builder.Services.AddScoped<Repository<MLInsight>>();
+builder.Services.AddScoped<Repository<WorkflowDefinition>>();
+builder.Services.AddScoped<Repository<WorkflowExecution>>();
+builder.Services.AddScoped<Repository<UserSegment>>();
+builder.Services.AddScoped<Repository<SearchIndex>>();
 
 // Register infrastructure services (DRY and Dependency Inversion)
 builder.Services.AddScoped<IHttpContextAccessor, HttpContextAccessor>();
@@ -170,6 +183,15 @@ builder.Services.AddScoped<IReportingService, ReportingService>();
 builder.Services.AddScoped<IImportService, ImportService>();
 builder.Services.AddScoped<ICacheService, CacheService>();
 builder.Services.AddScoped<IUserPreferencesEnhancedService, UserPreferencesEnhancedService>();
+
+// Phase 3 Advanced Features services
+builder.Services.AddScoped<Chatbot.API.Services.Phase3.Interfaces.IConversationAnalyticsService, Chatbot.API.Services.Phase3.ConversationAnalyticsService>();
+builder.Services.AddScoped<Chatbot.API.Services.Phase3.Interfaces.IMLInsightService, Chatbot.API.Services.Phase3.MLInsightService>();
+builder.Services.AddScoped<Chatbot.API.Services.Phase3.Interfaces.IWorkflowService, Chatbot.API.Services.Phase3.WorkflowService>();
+builder.Services.AddScoped<Chatbot.API.Services.Phase3.Interfaces.IUserSegmentationService, Chatbot.API.Services.Phase3.UserSegmentationService>();
+builder.Services.AddScoped<Chatbot.API.Services.Phase3.Interfaces.ISearchService, Chatbot.API.Services.Phase3.SearchService>();
+builder.Services.AddScoped<Chatbot.API.Services.Phase3.Interfaces.IAnalyticsExportService, Chatbot.API.Services.Phase3.AnalyticsExportService>();
+
 // Add HttpClientFactory for webhook delivery
 builder.Services.AddHttpClient();
 // Add memory cache for distributed cache interface

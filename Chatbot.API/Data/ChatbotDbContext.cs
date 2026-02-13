@@ -27,6 +27,14 @@ public class ChatbotDbContext : DbContext
     public DbSet<ScheduledReport> ScheduledReports { get; set; } = null!;
     public DbSet<ImportJob> ImportJobs { get; set; } = null!;
 
+    // Phase 3 Advanced Features
+    public DbSet<ConversationAnalyticsEntity> ConversationAnalytics { get; set; } = null!;
+    public DbSet<MLInsight> MLInsights { get; set; } = null!;
+    public DbSet<WorkflowDefinition> WorkflowDefinitions { get; set; } = null!;
+    public DbSet<WorkflowExecution> WorkflowExecutions { get; set; } = null!;
+    public DbSet<UserSegment> UserSegments { get; set; } = null!;
+    public DbSet<SearchIndex> SearchIndexes { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -104,6 +112,49 @@ public class ChatbotDbContext : DbContext
         // ImportJob configuration
         modelBuilder.Entity<ImportJob>()
             .HasIndex(ij => new { ij.UserId, ij.CreatedAt });
+
+        // Phase 3 Advanced Features Configurations
+
+        // ConversationAnalytics configuration
+        modelBuilder.Entity<ConversationAnalyticsEntity>()
+            .HasIndex(ca => new { ca.UserId, ca.ConversationId })
+            .IsUnique();
+
+        modelBuilder.Entity<ConversationAnalyticsEntity>()
+            .HasIndex(ca => new { ca.UserId, ca.UpdatedAt });
+
+        // MLInsight configuration
+        modelBuilder.Entity<MLInsight>()
+            .HasIndex(mi => new { mi.UserId, mi.GeneratedAt });
+
+        modelBuilder.Entity<MLInsight>()
+            .HasIndex(mi => new { mi.UserId, mi.InsightType });
+
+        // WorkflowDefinition configuration
+        modelBuilder.Entity<WorkflowDefinition>()
+            .HasIndex(wd => new { wd.UserId, wd.IsActive });
+
+        // WorkflowExecution configuration
+        modelBuilder.Entity<WorkflowExecution>()
+            .HasIndex(we => new { we.WorkflowDefinitionId, we.StartedAt });
+
+        // UserSegment configuration
+        modelBuilder.Entity<UserSegment>()
+            .HasIndex(us => us.UserId)
+            .IsUnique();
+
+        modelBuilder.Entity<UserSegment>()
+            .HasIndex(us => us.BehavioralSegment);
+
+        modelBuilder.Entity<UserSegment>()
+            .HasIndex(us => us.ChurnRiskScore);
+
+        // SearchIndex configuration
+        modelBuilder.Entity<SearchIndex>()
+            .HasIndex(si => new { si.UserId, si.ConversationId });
+
+        modelBuilder.Entity<SearchIndex>()
+            .HasIndex(si => si.Content);
 
         // Seed initial data if needed
         SeedData(modelBuilder);

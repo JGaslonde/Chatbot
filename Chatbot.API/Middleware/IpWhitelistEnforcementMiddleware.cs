@@ -35,7 +35,7 @@ public class IpWhitelistEnforcementMiddleware
 
             // Get client IP address
             var clientIp = GetClientIpAddress(context);
-            
+
             if (string.IsNullOrWhiteSpace(clientIp))
             {
                 _logger.LogWarning("Could not determine client IP for user {UserId}", userId);
