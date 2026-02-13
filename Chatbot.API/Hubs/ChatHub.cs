@@ -103,4 +103,95 @@ public class ChatHub : Hub
         await Clients.OthersInGroup($"conversation_{conversationId}")
             .SendAsync("UserTyping", Context.User?.Identity?.Name ?? "Anonymous", isTyping);
     }
+
+    // Phase 2: Webhook real-time updates
+    public async Task SubscribeToWebhookUpdates(int webhookId)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"webhook_{webhookId}");
+        _logger.LogInformation("Connection {ConnectionId} subscribed to webhook {WebhookId} updates", Context.ConnectionId, webhookId);
+    }
+
+    public async Task UnsubscribeFromWebhookUpdates(int webhookId)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"webhook_{webhookId}");
+        _logger.LogInformation("Connection {ConnectionId} unsubscribed from webhook {WebhookId} updates", Context.ConnectionId, webhookId);
+    }
+
+    // Phase 2: Import progress real-time updates
+    public async Task SubscribeToImportProgress(int importJobId)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"import_{importJobId}");
+        _logger.LogInformation("Connection {ConnectionId} subscribed to import {ImportJobId} progress", Context.ConnectionId, importJobId);
+    }
+
+    public async Task UnsubscribeFromImportProgress(int importJobId)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"import_{importJobId}");
+        _logger.LogInformation("Connection {ConnectionId} unsubscribed from import {ImportJobId} progress", Context.ConnectionId, importJobId);
+    }
+
+    // Phase 2: Report generation status updates
+    public async Task SubscribeToReportGeneration(int reportId)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"report_{reportId}");
+        _logger.LogInformation("Connection {ConnectionId} subscribed to report {ReportId} generation", Context.ConnectionId, reportId);
+    }
+
+    public async Task UnsubscribeFromReportGeneration(int reportId)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"report_{reportId}");
+        _logger.LogInformation("Connection {ConnectionId} unsubscribed from report {ReportId} generation", Context.ConnectionId, reportId);
+    }
+
+    // Internal method to broadcast webhook delivery status (called by WebhookService)
+    public async Task BroadcastWebhookDelivered(int webhookId, string eventType, bool success, string? errorMessage = null)
+    {
+        await Clients.Group($"webhook_{webhookId}")
+            .SendAsync("WebhookDelivered", new
+            {
+                WebhookId = webhookId,
+                EventType = eventType,
+                Success = success,
+                ErrorMessage = errorMessage,
+                Timestamp = DateTime.UtcNow
+            });
+
+        _logger.LogInformation("Webhook {WebhookId} delivery broadcasted: Success={Success}", webhookId, success);
+    }
+
+    // Internal method to broadcast import progress (called by ImportService)
+    public async Task BroadcastImportProgress(int importJobId, int processed, int total, int failed)
+    {
+        var progressPercentage = total > 0 ? (processed * 100 / total) : 0;
+        
+        await Clients.Group($"import_{importJobId}")
+            .SendAsync("ImportProgress", new
+            {
+                ImportJobId = importJobId,
+                ProcessedRecords = processed,
+                TotalRecords = total,
+                FailedRecords = failed,
+                ProgressPercentage = progressPercentage,
+                Timestamp = DateTime.UtcNow
+            });
+
+        _logger.LogInformation("Import {ImportJobId} progress broadcasted: {Processed}/{Total} ({Percentage}%)", 
+            importJobId, processed, total, progressPercentage);
+    }
+
+    // Internal method to broadcast report generation status (called by ReportingService)
+    public async Task BroadcastReportGenerationStatus(int reportId, string status, string? downloadUrl = null, string? errorMessage = null)
+    {
+        await Clients.Group($"report_{reportId}")
+            .SendAsync("ReportGenerationStatus", new
+            {
+                ReportId = reportId,
+                Status = status, // "generating", "completed", "failed"
+                DownloadUrl = downloadUrl,
+                ErrorMessage = errorMessage,
+                Timestamp = DateTime.UtcNow
+            });
+
+        _logger.LogInformation("Report {ReportId} status broadcasted: {Status}", reportId, status);
+    }
 }

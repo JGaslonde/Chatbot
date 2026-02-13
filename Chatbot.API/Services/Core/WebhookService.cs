@@ -2,9 +2,11 @@ using System.Security.Cryptography;
 using System.Text;
 using Chatbot.API.Data.Repositories.Interfaces;
 using Chatbot.API.Services.Core.Interfaces;
+using Chatbot.API.Hubs;
 using Chatbot.Core.Models.Entities;
 using Chatbot.Core.Models.Requests;
 using Chatbot.Core.Models.Responses;
+using Microsoft.AspNetCore.SignalR;
 
 namespace Chatbot.API.Services.Core;
 
@@ -14,17 +16,20 @@ public class WebhookService : IWebhookService
     private readonly IWebhookDeliveryRepository _deliveryRepository;
     private readonly ILogger<WebhookService> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IHubContext<ChatHub> _hubContext;
 
     public WebhookService(
         IWebhookRepository webhookRepository,
         IWebhookDeliveryRepository deliveryRepository,
         ILogger<WebhookService> logger,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        IHubContext<ChatHub> hubContext)
     {
         _webhookRepository = webhookRepository;
         _deliveryRepository = deliveryRepository;
         _logger = logger;
         _httpClientFactory = httpClientFactory;
+        _hubContext = hubContext;
     }
 
     public async Task<WebhookDto?> CreateWebhookAsync(int userId, WebhookRequest request)
@@ -139,6 +144,17 @@ public class WebhookService : IWebhookService
             };
 
             await _deliveryRepository.AddAsync(delivery);
+
+            // Broadcast webhook delivery status via SignalR
+            await _hubContext.Clients.Group($"webhook_{webhook.Id}")
+                .SendAsync("WebhookDelivered", new
+                {
+                    WebhookId = webhook.Id,
+                    EventType = eventType,
+                    Success = response.IsSuccessStatusCode,
+                    ErrorMessage = response.IsSuccessStatusCode ? null : $"HTTP {response.StatusCode}",
+                    Timestamp = DateTime.UtcNow
+                });
 
             if (response.IsSuccessStatusCode)
             {

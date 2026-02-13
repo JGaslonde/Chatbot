@@ -240,6 +240,11 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 app.UseAuthentication();
+
+// Add Phase 2 security middleware
+app.UseMiddleware<ApiKeyValidationMiddleware>();
+app.UseMiddleware<IpWhitelistEnforcementMiddleware>();
+
 app.UseAuthorization();
 app.MapControllers();
 

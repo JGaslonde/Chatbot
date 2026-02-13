@@ -1,8 +1,10 @@
 using Chatbot.API.Data.Repositories.Interfaces;
 using Chatbot.API.Services.Core.Interfaces;
+using Chatbot.API.Hubs;
 using Chatbot.Core.Models.Entities;
 using Chatbot.Core.Models.Requests;
 using Chatbot.Core.Models.Responses;
+using Microsoft.AspNetCore.SignalR;
 
 namespace Chatbot.API.Services.Core;
 
@@ -10,11 +12,13 @@ public class ImportService : IImportService
 {
     private readonly IImportJobRepository _repository;
     private readonly ILogger<ImportService> _logger;
+    private readonly IHubContext<ChatHub> _hubContext;
 
-    public ImportService(IImportJobRepository repository, ILogger<ImportService> logger)
+    public ImportService(IImportJobRepository repository, ILogger<ImportService> logger, IHubContext<ChatHub> hubContext)
     {
         _repository = repository;
         _logger = logger;
+        _hubContext = hubContext;
     }
 
     public async Task<ImportJobDto> StartImportAsync(int userId, StartImportRequest request)

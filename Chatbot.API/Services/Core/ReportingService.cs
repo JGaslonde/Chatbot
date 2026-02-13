@@ -1,8 +1,10 @@
 using Chatbot.API.Data.Repositories.Interfaces;
 using Chatbot.API.Services.Core.Interfaces;
+using Chatbot.API.Hubs;
 using Chatbot.Core.Models.Entities;
 using Chatbot.Core.Models.Requests;
 using Chatbot.Core.Models.Responses;
+using Microsoft.AspNetCore.SignalR;
 
 namespace Chatbot.API.Services.Core;
 
@@ -10,11 +12,13 @@ public class ReportingService : IReportingService
 {
     private readonly IScheduledReportRepository _repository;
     private readonly ILogger<ReportingService> _logger;
+    private readonly IHubContext<ChatHub> _hubContext;
 
-    public ReportingService(IScheduledReportRepository repository, ILogger<ReportingService> logger)
+    public ReportingService(IScheduledReportRepository repository, ILogger<ReportingService> logger, IHubContext<ChatHub> hubContext)
     {
         _repository = repository;
         _logger = logger;
+        _hubContext = hubContext;
     }
 
     public async Task<ScheduledReportDto> CreateScheduledReportAsync(int userId, ScheduledReportRequest request)
