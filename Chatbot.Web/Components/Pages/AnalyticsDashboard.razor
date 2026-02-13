@@ -1,0 +1,138 @@
+@page "/analytics-dashboard"
+@using Chatbot.Core.Models.Responses
+@using Chatbot.Web.Services
+@inject AnalyticsDashboardService AnalyticsService
+@inject ILogger<AnalyticsDashboard> Logger
+
+<div class="container-fluid">
+    <h1>Analytics Dashboard</h1>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <label for="fromDate" class="form-label">From Date</label>
+                    <input type="date" class="form-control" id="fromDate" @bind="fromDate" />
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <label for="toDate" class="form-label">To Date</label>
+                    <input type="date" class="form-control" id="toDate" @bind="toDate" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn btn-primary mb-3" @onclick="LoadAnalytics" disabled="@isLoading">
+        @if (isLoading)
+        {
+            <span>Loading...</span>
+        }
+        else
+        {
+            <span>Load Analytics</span>
+        }
+    </button>
+
+    @if (analytics != null)
+    {
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Conversations</h5>
+                        <h3>@analytics.TotalConversations</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Messages</h5>
+                        <h3>@analytics.TotalMessages</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Average Sentiment</h5>
+                        <h3>@analytics.AverageSentimentScore.ToString("F2")</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Avg Conversation Duration</h5>
+                        <h3>@analytics.AverageConversationDuration.ToString("F0") min</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (analytics.IntentDistribution?.Count > 0)
+        {
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Intent Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Intent</th>
+                                <th>Count</th>
+                                <th>Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                var total = analytics.IntentDistribution.Values.Sum();
+                                foreach (var intent in analytics.IntentDistribution)
+                                {
+                                    var percentage = (intent.Value * 100.0 / total);
+                                    <tr>
+                                        <td>@intent.Key</td>
+                                        <td>@intent.Value</td>
+                                        <td>@percentage.ToString("F1")%</td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private DateTime fromDate = DateTime.Today.AddMonths(-1);
+    private DateTime toDate = DateTime.Today;
+    private AdvancedAnalyticsResponse? analytics;
+    private bool isLoading = false;
+
+    private async Task LoadAnalytics()
+    {
+        isLoading = true;
+        try
+        {
+            analytics = await AnalyticsService.GetAdvancedAnalyticsAsync(fromDate, toDate);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load analytics");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

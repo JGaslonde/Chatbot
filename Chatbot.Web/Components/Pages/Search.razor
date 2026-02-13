@@ -1,0 +1,157 @@
+@page "/search"
+@using Chatbot.Core.Models.Requests
+@using Chatbot.Core.Models.Responses
+@using Chatbot.Web.Services
+@inject AdvancedSearchService SearchService
+@inject ILogger<Search> Logger
+
+<div class="container-fluid">
+    <h1>Advanced Search</h1>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="searchQuery" class="form-label">Search Query</label>
+                    <input type="text" class="form-control" id="searchQuery" @bind="query" placeholder="Search conversations or messages..." />
+                </div>
+                <div class="col-md-6">
+                    <label for="sortBy" class="form-label">Sort By</label>
+                    <select class="form-control" id="sortBy" @bind="sortBy">
+                        <option value="lastMessageAt">Last Message</option>
+                        <option value="date">Creation Date</option>
+                        <option value="title">Title</option>
+                        <option value="messages">Message Count</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label for="fromDate" class="form-label">From Date</label>
+                    <input type="date" class="form-control" id="fromDate" @bind="fromDate" />
+                </div>
+                <div class="col-md-3">
+                    <label for="toDate" class="form-label">To Date</label>
+                    <input type="date" class="form-control" id="toDate" @bind="toDate" />
+                </div>
+                <div class="col-md-3">
+                    <label for="pageSize" class="form-label">Page Size</label>
+                    <input type="number" class="form-control" id="pageSize" @bind="pageSize" min="5" max="100" />
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" @onclick="SearchConversations" disabled="@isSearching">
+                        @if (isSearching)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                            <span>Searching...</span>
+                        }
+                        else
+                        {
+                            <span>Search</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (searchResults != null)
+    {
+        <div class="card">
+            <div class="card-body">
+                <h5>Search Results <span class="badge bg-info">@searchResults.TotalCount total</span></h5>
+
+                @if (searchResults.Results.Count > 0)
+                {
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th>Started</th>
+                                <th>Messages</th>
+                                <th>Summary</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var result in (searchResults.Results ?? new List<ConversationResponse>()))
+                            {
+                                <tr>
+                                    <td>@result.Id</td>
+                                    <td>@result.Title</td>
+                                    <td>@result.StartedAt.ToString("g")</td>
+                                    <td><span class="badge bg-secondary">@result.MessageCount</span></td>
+                                    <td>@(result.Summary?.Substring(0, Math.Min(50, result.Summary?.Length ?? 0)) ?? "N/A")...</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+
+                    @if (searchResults.TotalPages > 1)
+                    {
+                        <nav aria-label="Search results pagination">
+                            <ul class="pagination">
+                                @for (int p = 1; p <= searchResults.TotalPages; p++)
+                                {
+                                    var pageNum = p;
+                                    <li class="page-item @(pageNum == currentPage ? "active" : "")">
+                                        <button class="page-link" @onclick="@(() => GoToPage(pageNum))">@pageNum</button>
+                                    </li>
+                                }
+                            </ul>
+                        </nav>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted">No results found.</p>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string query = "";
+   private string sortBy = "lastMessageAt";
+    private DateTime fromDate = DateTime.Today.AddMonths(-1);
+    private DateTime toDate = DateTime.Today;
+    private int pageSize = 20;
+    private int currentPage = 1;
+    private SearchResultsResponse? searchResults;
+    private bool isSearching = false;
+
+    private async Task SearchConversations()
+    {
+        isSearching = true;
+        try
+        {
+            var request = new SearchConversationsRequest(
+                query,
+                fromDate,
+                toDate,
+                sortBy,
+                false,
+                currentPage,
+                pageSize
+            );
+
+            searchResults = await SearchService.SearchConversationsAsync(request);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Search failed");
+        }
+        finally
+        {
+            isSearching = false;
+        }
+    }
+
+    private Task GoToPage(int page)
+    {
+        currentPage = page;
+        return SearchConversations();
+    }
+}

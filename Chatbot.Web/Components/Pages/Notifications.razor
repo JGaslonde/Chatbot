@@ -1,0 +1,107 @@
+@page "/notifications"
+@using Chatbot.Core.Models.Responses
+@using Chatbot.Web.Services
+@inject NotificationManagementService NotificationService
+@inject ILogger<Notifications> Logger
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Notifications</h1>
+        </div>
+        <div class="col text-end">
+            <button class="btn btn-sm btn-outline-primary" @onclick="RefreshNotifications">
+                Refresh
+            </button>
+            @if (unreadNotifications?.Count > 0)
+            {
+                <button class="btn btn-sm btn-outline-success" @onclick="MarkAllAsRead">
+                    Mark All as Read
+                </button>
+            }
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="alert alert-info">Loading notifications...</div>
+    }
+    else if (unreadNotifications == null || unreadNotifications.Count == 0)
+    {
+        <div class="alert alert-info">No unread notifications</div>
+    }
+    else
+    {
+        <div class="list-group">
+            @foreach (var notification in unreadNotifications)
+            {
+                <div class="list-group-item" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h6 class="mb-1">@notification.Type</h6>
+                        <p class="mb-1">@notification.Message</p>
+                        <small class="text-muted">@notification.CreatedAt.ToString("g")</small>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-outline-success" @onclick="@(async () => await MarkAsRead(notification.Id))">
+                            Read
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="@(async () => await DeleteNotification(notification.Id))">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<NotificationDto>? unreadNotifications;
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshNotifications();
+    }
+
+    private async Task RefreshNotifications()
+    {
+        isLoading = true;
+        try
+        {
+            unreadNotifications = await NotificationService.GetUnreadNotificationsAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load notifications");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task MarkAsRead(int notificationId)
+    {
+        if (await NotificationService.MarkNotificationAsReadAsync(notificationId))
+        {
+            await RefreshNotifications();
+        }
+    }
+
+    private async Task MarkAllAsRead()
+    {
+        if (await NotificationService.MarkAllNotificationsAsReadAsync())
+        {
+            await RefreshNotifications();
+        }
+    }
+
+    private async Task DeleteNotification(int notificationId)
+    {
+        if (await NotificationService.DeleteNotificationAsync(notificationId))
+        {
+            await RefreshNotifications();
+        }
+    }
+}
