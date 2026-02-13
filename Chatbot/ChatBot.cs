@@ -1,4 +1,6 @@
 using Chatbot.Services;
+using Chatbot.Models;
+using Chatbot.Services.Models;
 
 namespace Chatbot;
 
@@ -71,7 +73,7 @@ public class ChatBot
         string lowerInput = input.ToLower().Trim();
 
         // Adapt response based on sentiment if very negative
-        if (sentiment.Sentiment == Services.Sentiment.VeryNegative)
+        if (sentiment.Sentiment == Sentiment.VeryNegative)
         {
             return "I sense you're frustrated. I'm here to help. Let me try to address your concern.";
         }

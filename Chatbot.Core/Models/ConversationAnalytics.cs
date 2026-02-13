@@ -1,3 +1,5 @@
+using Chatbot.Core.Models.Analytics;
+
 namespace Chatbot.Core.Models;
 
 public class ConversationAnalytics
@@ -9,10 +11,4 @@ public class ConversationAnalytics
     public Dictionary<string, int> SentimentDistribution { get; set; } = new();
     public Dictionary<string, int> IntentDistribution { get; set; } = new();
     public DateRange DateRange { get; set; } = new();
-}
-
-public class DateRange
-{
-    public DateTime Start { get; set; }
-    public DateTime End { get; set; }
 }

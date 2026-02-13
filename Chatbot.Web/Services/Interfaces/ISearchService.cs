@@ -1,4 +1,5 @@
 using Chatbot.Core.Models.Responses;
+using Chatbot.Web.Services.Models;
 
 namespace Chatbot.Web.Services.Interfaces;
 
@@ -21,13 +22,4 @@ public interface ISearchService
     /// Gets conversation statistics for the given query.
     /// </summary>
     ConversationStats GetStats(List<ConversationResponse> conversations);
-}
-
-/// <summary>
-/// Statistics for a set of conversations.
-/// </summary>
-public class ConversationStats
-{
-    public int TotalConversations { get; set; }
-    public int TotalMessages { get; set; }
 }

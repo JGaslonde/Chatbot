@@ -1,5 +1,6 @@
 using Chatbot.Core.Models.Responses;
 using Chatbot.Web.Services.Interfaces;
+using Chatbot.Web.Services.Models;
 
 namespace Chatbot.Web.Services;
 
