@@ -34,7 +34,7 @@ public class IntentRecognizer
         }
 
         string lowerMessage = message.ToLower();
-        
+
         // Track best match
         string bestIntent = "unknown";
         double bestConfidence = 0.0;
@@ -54,7 +54,7 @@ public class IntentRecognizer
             {
                 // Calculate confidence based on pattern matches
                 double confidence = Math.Min(1.0, (double)matchCount / patterns.Length + 0.5);
-                
+
                 if (confidence > bestConfidence)
                 {
                     bestIntent = intent;

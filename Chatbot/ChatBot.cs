@@ -49,7 +49,7 @@ public class ChatBot
 
         // Analyze sentiment
         var sentimentResult = _sentimentAnalyzer.Analyze(userInput);
-        
+
         // Recognize intent
         var intentResult = _intentRecognizer.Recognize(userInput);
 
@@ -58,7 +58,7 @@ public class ChatBot
 
         // Generate response based on input
         string response = GenerateResponse(userInput, sentimentResult, intentResult);
-        
+
         // Store bot response in conversation history
         _conversation.AddMessage(Name, response);
 
@@ -184,7 +184,7 @@ public class ChatBot
     public void ShowHistory(int messageCount = 10)
     {
         var recentMessages = _conversation.GetRecentMessages(messageCount);
-        
+
         Console.WriteLine("\n=== Recent Conversation History ===");
         foreach (var msg in recentMessages)
         {
@@ -205,13 +205,13 @@ public class ChatBot
     {
         Console.WriteLine("\n=== Message Analysis ===");
         Console.WriteLine($"Message: {message}");
-        
+
         var sentiment = _sentimentAnalyzer.Analyze(message);
         Console.WriteLine($"Sentiment: {sentiment.Sentiment} (Score: {sentiment.Score:F2})");
-        
+
         var intent = _intentRecognizer.Recognize(message);
         Console.WriteLine($"Intent: {intent.Intent} (Confidence: {intent.Confidence:F2})");
-        
+
         var filter = _messageFilter.CheckMessage(message);
         Console.WriteLine($"Filtered: {filter.IsFiltered}");
         if (filter.IsFiltered && filter.Reasons.Count > 0)

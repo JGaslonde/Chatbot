@@ -1,4 +1,4 @@
-using Chatbot.API.Exceptions;
+using Chatbot.Core.Exceptions;
 using Chatbot.API.Services.Core.Interfaces;
 using Microsoft.Extensions.Logging;
 using Chatbot.API.Infrastructure.Authorization.Interfaces;

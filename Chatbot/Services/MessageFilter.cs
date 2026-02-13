@@ -13,7 +13,7 @@ public class MessageFilter
     public MessageFilter(int maxMessageLength = 5000)
     {
         _maxMessageLength = maxMessageLength;
-        
+
         // Basic profanity list (can be extended)
         _profanityWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {

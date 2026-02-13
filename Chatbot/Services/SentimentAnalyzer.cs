@@ -14,20 +14,50 @@ public class SentimentAnalyzer
     {
         _positiveWords = new Dictionary<string, double>
         {
-            ["excellent"] = 1.0, ["amazing"] = 1.0, ["wonderful"] = 1.0, ["fantastic"] = 1.0,
-            ["great"] = 0.8, ["good"] = 0.6, ["nice"] = 0.5, ["love"] = 0.9,
-            ["happy"] = 0.7, ["best"] = 0.9, ["awesome"] = 0.9, ["perfect"] = 0.8,
-            ["thank"] = 0.5, ["thanks"] = 0.5, ["appreciate"] = 0.6, ["helpful"] = 0.6,
-            ["glad"] = 0.6, ["pleased"] = 0.6, ["enjoy"] = 0.7, ["like"] = 0.5
+            ["excellent"] = 1.0,
+            ["amazing"] = 1.0,
+            ["wonderful"] = 1.0,
+            ["fantastic"] = 1.0,
+            ["great"] = 0.8,
+            ["good"] = 0.6,
+            ["nice"] = 0.5,
+            ["love"] = 0.9,
+            ["happy"] = 0.7,
+            ["best"] = 0.9,
+            ["awesome"] = 0.9,
+            ["perfect"] = 0.8,
+            ["thank"] = 0.5,
+            ["thanks"] = 0.5,
+            ["appreciate"] = 0.6,
+            ["helpful"] = 0.6,
+            ["glad"] = 0.6,
+            ["pleased"] = 0.6,
+            ["enjoy"] = 0.7,
+            ["like"] = 0.5
         };
 
         _negativeWords = new Dictionary<string, double>
         {
-            ["terrible"] = -1.0, ["awful"] = -1.0, ["horrible"] = -1.0, ["worst"] = -1.0,
-            ["bad"] = -0.6, ["hate"] = -0.9, ["angry"] = -0.7, ["sad"] = -0.6,
-            ["upset"] = -0.7, ["annoyed"] = -0.6, ["disappointed"] = -0.7, ["useless"] = -0.8,
-            ["poor"] = -0.6, ["fail"] = -0.7, ["broken"] = -0.6, ["problem"] = -0.5,
-            ["issue"] = -0.4, ["wrong"] = -0.5, ["difficult"] = -0.4, ["hard"] = -0.3
+            ["terrible"] = -1.0,
+            ["awful"] = -1.0,
+            ["horrible"] = -1.0,
+            ["worst"] = -1.0,
+            ["bad"] = -0.6,
+            ["hate"] = -0.9,
+            ["angry"] = -0.7,
+            ["sad"] = -0.6,
+            ["upset"] = -0.7,
+            ["annoyed"] = -0.6,
+            ["disappointed"] = -0.7,
+            ["useless"] = -0.8,
+            ["poor"] = -0.6,
+            ["fail"] = -0.7,
+            ["broken"] = -0.6,
+            ["problem"] = -0.5,
+            ["issue"] = -0.4,
+            ["wrong"] = -0.5,
+            ["difficult"] = -0.4,
+            ["hard"] = -0.3
         };
     }
 

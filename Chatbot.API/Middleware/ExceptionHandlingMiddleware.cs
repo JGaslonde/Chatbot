@@ -1,4 +1,4 @@
-using Chatbot.API.Exceptions;
+using Chatbot.Core.Exceptions;
 using Chatbot.Core.Models.Responses;
 using System.Text.Json;
 
