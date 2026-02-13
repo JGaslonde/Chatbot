@@ -1,6 +1,7 @@
 using Chatbot.API.Data.Context;
 using Chatbot.Core.Models.Entities;
 using Microsoft.EntityFrameworkCore;
+using Chatbot.API.Data.Repositories.Interfaces;
 
 namespace Chatbot.API.Data.Repositories;
 

@@ -2,17 +2,9 @@ using Chatbot.Core.Models.Requests;
 using Chatbot.Core.Models.Responses;
 using System.Net.Http.Json;
 using System.Net.Http.Headers;
+using Chatbot.Web.Services.Interfaces;
 
 namespace Chatbot.Web.Services;
-
-public interface IAuthService
-{
-    Task<(bool Success, string Message, string? Token)> LoginAsync(string username, string password);
-    Task<(bool Success, string Message, string? Token)> RegisterAsync(string username, string email, string password);
-    Task LogoutAsync();
-    string? GetToken();
-    bool IsAuthenticated();
-}
 
 public class AuthService : IAuthService
 {

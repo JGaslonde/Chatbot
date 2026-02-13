@@ -1,3 +1,4 @@
+@using Chatbot.Web.Services.Interfaces
 @page "/history"
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components.Authorization
@@ -12,11 +13,8 @@
     <h1>Conversation History</h1>
     <p class="lead">View and manage your past conversations.</p>
 
-    <SearchBox 
-        Placeholder="Search conversations by title or content..."
-        SearchQuery="@searchQuery"
-        OnSearch="@OnSearchChanged"
-    />
+    <SearchBox Placeholder="Search conversations by title or content..." SearchQuery="@searchQuery"
+               OnSearch="@OnSearchChanged" />
 
     @if (isLoading)
     {
@@ -74,64 +72,67 @@
                                 <td>
                                     @if (!string.IsNullOrEmpty(conversation.Summary))
                                     {
-                                        <small>@conversation.Summary.Substring(0, Math.Min(50, conversation.Summary.Length))...</small>
-                                    }
+                                        <small>@conversation.Summary.Substring(0, Math.Min(50,
+                                                                            conversation.Summary.Length))...</small>
+                                        }
                                     else
-                                    {
-                                        <small class="text-muted">No summary</small>
-                                    }
-                                </td>
-                                <td>
-                                    <a href="@($"/chat/{conversation.Id}")" class="btn btn-sm btn-primary">View</a>
-                                    <a href=" @($"/conversation/{conversation.Id}")" class="btn btn-sm btn-info" title="Details">
-                                        <span class="bi bi-info-circle"></span>
-                                    </a>
-                                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => ExportConversation(conversation)" title="Export">
-                                        <span class="bi bi-download"></span>
-                                    </button>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+                                        {
+                                            <small class="text-muted">No summary</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <a href="@($"/chat/{conversation.Id}")" class="btn btn-sm btn-primary">View</a>
+                                        <a href=" @($"/conversation/{conversation.Id}")" class="btn btn-sm btn-info"
+                                               title="Details">
+                                            <span class="bi bi-info-circle"></span>
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-secondary"
+                                                @onclick="() => ExportConversation(conversation)" title="Export">
+                                            <span class="bi bi-download"></span>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
-    }
+        }
 
-    @if (!string.IsNullOrEmpty(exportMessage))
-    {
-        <Alert Message="@exportMessage" Type="Alert.AlertType.Success" AutoDismissMs="3000" />
-    }
-</div>
+        @if (!string.IsNullOrEmpty(exportMessage))
+        {
+            <Alert Message="@exportMessage" Type="Alert.AlertType.Success" AutoDismissMs="3000" />
+        }
+    </div>
 
-<style>
-.history-container {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 20px;
-}
+    <style>
+        .history-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
 
-.conversations-table {
-    margin-top: 20px;
-}
+        .conversations-table {
+            margin-top: 20px;
+        }
 
-.table {
-    margin-bottom: 0;
-}
+        .table {
+            margin-bottom: 0;
+        }
 
-.table tbody tr:hover {
-    background-color: #f5f5f5;
-}
+        .table tbody tr:hover {
+            background-color: #f5f5f5;
+        }
 
-.table td {
-    vertical-align: middle;
-}
+        .table td {
+            vertical-align: middle;
+        }
 
-.btn-sm {
-    padding: 4px 8px;
-    font-size: 12px;
-}
-</style>
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+    </style>
 
 @code {
     [Inject]

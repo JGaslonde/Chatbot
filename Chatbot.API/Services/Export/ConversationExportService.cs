@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
-using Chatbot.API.Data.Repositories;
+using Chatbot.API.Data.Repositories.Interfaces;
+using Chatbot.API.Services.Export.Interfaces;
 
 namespace Chatbot.API.Services.Export;
 

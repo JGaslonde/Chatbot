@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Chatbot.API.Infrastructure.Auth;
-using Chatbot.API.Infrastructure.Http;
+using Chatbot.API.Infrastructure.Auth.Interfaces;
+using Chatbot.API.Infrastructure.Http.Interfaces;
 using Chatbot.Core.Models;
 
 namespace Chatbot.API.Controllers.Chat;

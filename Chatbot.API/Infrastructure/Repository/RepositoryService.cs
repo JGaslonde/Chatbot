@@ -1,4 +1,5 @@
-using Chatbot.API.Data.Repositories;
+using Chatbot.API.Data.Repositories.Interfaces;
+using Chatbot.API.Infrastructure.Repository.Interfaces;
 using Chatbot.API.Exceptions;
 using Microsoft.Extensions.Logging;
 

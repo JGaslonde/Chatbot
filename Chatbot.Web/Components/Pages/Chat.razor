@@ -4,6 +4,7 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components
 @using Chatbot.Core.Models.Responses
+@using Chatbot.Web.Services.Interfaces
 @attribute [Authorize]
 
 <PageTitle>Chat</PageTitle>
@@ -40,8 +41,8 @@
             <p>Enter a title for your conversation (optional) and click Start.</p>
             <div class="input-group">
                 <input type="text" class="form-control" placeholder="Conversation title (optional)"
-                       @bind="newConversationTitle"                    disabled="@isLoadingConversation"                />
-                <button class="btn btn-primary" @onclick="StartNewConversation"                    disabled="@isLoadingConversation">
+                       @bind="newConversationTitle" disabled="@isLoadingConversation" />
+                <button class="btn btn-primary" @onclick="StartNewConversation" disabled="@isLoadingConversation">
                     @if (isLoadingConversation)
                     {
                         <span class="spinner-border spinner-border-sm me-2"></span>

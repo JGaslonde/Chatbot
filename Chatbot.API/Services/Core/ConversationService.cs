@@ -1,7 +1,8 @@
 using Chatbot.Core.Models.Entities;
-using Chatbot.API.Data.Repositories;
-using Chatbot.API.Services.Analysis;
-using Chatbot.API.Services.Processing;
+using Chatbot.API.Data.Repositories.Interfaces;
+using Chatbot.API.Services.Analysis.Interfaces;
+using Chatbot.API.Services.Processing.Interfaces;
+using Chatbot.API.Services.Core.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace Chatbot.API.Services.Core;

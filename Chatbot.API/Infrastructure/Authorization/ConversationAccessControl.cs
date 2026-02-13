@@ -1,6 +1,7 @@
 using Chatbot.API.Exceptions;
-using Chatbot.API.Services.Core;
+using Chatbot.API.Services.Core.Interfaces;
 using Microsoft.Extensions.Logging;
+using Chatbot.API.Infrastructure.Authorization.Interfaces;
 
 namespace Chatbot.API.Infrastructure.Authorization;
 

@@ -1,10 +1,11 @@
-using Chatbot.API.Services.Analytics;
-using Chatbot.API.Services.Core;
-using Chatbot.API.Services.Export;
+using Chatbot.API.Services.Analytics.Interfaces;
+using Chatbot.API.Services.Core.Interfaces;
+using Chatbot.API.Services.Export.Interfaces;
 using Chatbot.Core.Models;
 using Chatbot.Core.Models.Responses;
 using Chatbot.Core.Models.Entities;
 using Microsoft.Extensions.Logging;
+using Chatbot.API.Infrastructure.Facades.Interfaces;
 
 namespace Chatbot.API.Infrastructure.Facades;
 

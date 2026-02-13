@@ -1,6 +1,7 @@
 using Chatbot.Core.Models.Requests;
 using Chatbot.Core.Models.Responses;
 using System.Net.Http.Json;
+using Chatbot.Web.Services.Interfaces;
 
 namespace Chatbot.Web.Services;
 

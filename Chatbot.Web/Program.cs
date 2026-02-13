@@ -1,5 +1,6 @@
 using Chatbot.Web.Components;
 using Chatbot.Web.Services;
+using Chatbot.Web.Services.Interfaces;
 using Microsoft.AspNetCore.Components.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);

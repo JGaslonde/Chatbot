@@ -1,4 +1,5 @@
 using Chatbot.Core.Models.Responses;
+using Chatbot.API.Infrastructure.Http.Interfaces;
 
 namespace Chatbot.API.Infrastructure.Http;
 

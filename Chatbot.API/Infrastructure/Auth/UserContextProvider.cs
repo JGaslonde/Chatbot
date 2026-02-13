@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Chatbot.API.Exceptions;
+using Chatbot.API.Infrastructure.Auth.Interfaces;
 
 namespace Chatbot.API.Infrastructure.Auth;
 

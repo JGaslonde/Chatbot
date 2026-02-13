@@ -1,3 +1,5 @@
+using Chatbot.API.Services.Analysis.Interfaces;
+
 namespace Chatbot.API.Services.Analysis;
 
 public class SimpleIntentRecognitionService : IIntentRecognitionService

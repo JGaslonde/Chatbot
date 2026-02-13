@@ -1,5 +1,6 @@
 using Chatbot.API.Data.Repositories;
 using Chatbot.Core.Models.Entities;
+using Chatbot.API.Services.Core.Interfaces;
 
 namespace Chatbot.API.Services.Core;
 

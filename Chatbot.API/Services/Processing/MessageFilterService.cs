@@ -1,5 +1,7 @@
 using System.Text.RegularExpressions;
 
+using Chatbot.API.Services.Processing.Interfaces;
+
 namespace Chatbot.API.Services.Processing;
 
 public class MessageFilterService : IMessageFilterService

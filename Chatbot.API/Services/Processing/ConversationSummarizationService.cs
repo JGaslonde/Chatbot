@@ -1,4 +1,5 @@
 using Chatbot.Core.Models.Entities;
+using Chatbot.API.Services.Processing.Interfaces;
 
 namespace Chatbot.API.Services.Processing;
 

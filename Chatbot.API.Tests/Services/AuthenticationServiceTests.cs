@@ -3,7 +3,7 @@ using FluentAssertions;
 using Moq;
 using Microsoft.Extensions.Configuration;
 using Chatbot.API.Services.Core;
-using Chatbot.API.Data.Repositories;
+using Chatbot.API.Data.Repositories.Interfaces;
 using Chatbot.Core.Models.Entities;
 
 namespace Chatbot.API.Tests.Services;

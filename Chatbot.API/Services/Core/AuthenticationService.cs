@@ -1,5 +1,6 @@
 using Chatbot.Core.Models.Entities;
-using Chatbot.API.Data.Repositories;
+using Chatbot.API.Data.Repositories.Interfaces;
+using Chatbot.API.Services.Core.Interfaces;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;

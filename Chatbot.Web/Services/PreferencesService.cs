@@ -1,27 +1,8 @@
 using Chatbot.Core.Models.Responses;
 using System.Net.Http.Json;
+using Chatbot.Web.Services.Interfaces;
 
 namespace Chatbot.Web.Services;
-
-/// <summary>
-/// User preferences model
-/// </summary>
-public class UserPreferences
-{
-    public int UserId { get; set; }
-    public string? Theme { get; set; } = "light";
-    public string? Language { get; set; } = "en";
-    public bool NotificationsEnabled { get; set; } = true;
-    public bool DarkMode { get; set; } = false;
-    public int MessagePageSize { get; set; } = 20;
-    public DateTime? UpdatedAt { get; set; }
-}
-
-public interface IPreferencesService
-{
-    Task<(bool Success, string Message, UserPreferences? Preferences)> GetPreferencesAsync();
-    Task<(bool Success, string Message, UserPreferences? Preferences)> UpdatePreferencesAsync(UserPreferences preferences);
-}
 
 public class PreferencesService : IPreferencesService
 {

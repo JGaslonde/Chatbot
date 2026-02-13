@@ -1,5 +1,6 @@
-using Chatbot.API.Services.Processing;
+using Chatbot.API.Services.Processing.Interfaces;
 using Microsoft.Extensions.Logging;
+using Chatbot.API.Services.Analysis.Interfaces;
 
 namespace Chatbot.API.Services.Analysis;
 
