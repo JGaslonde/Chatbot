@@ -1,0 +1,157 @@
+@page "/ml-insights"
+@inject HttpClient Http
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1>
+                <i class="fas fa-brain me-2"></i>ML Insights
+            </h1>
+            <p class="text-muted">View machine learning insights from conversation analysis</p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Filter by insight type..." @bind="filterType" @bind:event="oninput">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="showUnreviewed" @bind="showUnreviewedOnly">
+                <label class="form-check-label" for="showUnreviewed">
+                    Show Unreviewed Only
+                </label>
+            </div>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="alert alert-info">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+            Loading insights...
+        </div>
+    }
+    else if (filteredInsights?.Count > 0)
+    {
+        <div class="row">
+            @foreach (var insight in filteredInsights)
+            {
+                <div class="col-md-6 mb-3">
+                    <div class="card border-left border-3" style="border-left-color: @GetInsightColor(insight.Confidence);">
+                        <div class="card-header bg-light">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">@insight.InsightType</h6>
+                                <div>
+                                    <span class="badge bg-info me-2">Confidence: @insight.Confidence.ToString("P0")</span>
+                                    @if (!insight.IsReviewed)
+                                    {
+                                        <span class="badge bg-warning">New</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">@insight.InsightValue</p>
+                            @if (!string.IsNullOrEmpty(insight.RecommendedAction))
+                            {
+                                <div class="alert alert-light mb-2">
+                                    <strong>Recommendation:</strong> @insight.RecommendedAction
+                                </div>
+                            }
+                            <small class="text-muted">
+                                Generated: @insight.GeneratedAt.ToString("g") | Sample Size: @insight.SampleSize
+                            </small>
+                        </div>
+                        <div class="card-footer bg-light">
+                            @if (!insight.IsReviewed)
+                            {
+                                <button class="btn btn-sm btn-success" @onclick="() => MarkAsReviewed(insight.Id)">
+                                    <i class="fas fa-check me-1"></i>Mark Reviewed
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            No insights found matching your filters.
+        </div>
+    }
+</div>
+
+@code {
+    private List<MLInsightDto>? insights;
+    private List<MLInsightDto>? filteredInsights;
+    private bool isLoading = true;
+    private string filterType = "";
+    private bool showUnreviewedOnly = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            // TODO: Replace with actual API call
+            // insights = await Http.GetFromJsonAsync<List<MLInsightDto>>("api/v1/insights");
+            
+            // Mock data
+            insights = new List<MLInsightDto>
+            {
+                new(1, "Topic Extraction", "Users frequently ask about billing", 0.92, 150, "Top topic detected in 150+ conversations", "Create FAQ section for billing", DateTime.UtcNow.AddHours(-2), false),
+                new(2, "Sentiment Anomaly", "Unusual drop in sentiment detected", 0.87, 45, "Sentiment dropped 40% this week", "Review recent deployment for issues", DateTime.UtcNow.AddHours(-4), true),
+                new(3, "Intent Pattern", "New user intent pattern: refund_request", 0.78, 32, "New intent emerging in conversations", "Update response templates", DateTime.UtcNow.AddHours(-6), false)
+            };
+            
+            filteredInsights = insights;
+        }
+        catch (Exception)
+        {
+            // Handle error
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        UpdateFilter();
+    }
+
+    private void UpdateFilter()
+    {
+        filteredInsights = insights?
+            .Where(i => string.IsNullOrEmpty(filterType) || i.InsightType.Contains(filterType, StringComparison.OrdinalIgnoreCase))
+            .Where(i => !showUnreviewedOnly || !i.IsReviewed)
+            .ToList();
+    }
+
+    private async Task MarkAsReviewed(int insightId)
+    {
+        // TODO: Call API to mark as reviewed
+        await Task.CompletedTask;
+    }
+
+    private string GetInsightColor(double confidence) =>
+        confidence >= 0.85 ? "#28a745" : confidence >= 0.7 ? "#ffc107" : "#dc3545";
+
+    public record MLInsightDto(
+        int Id,
+        string InsightType,
+        string InsightValue,
+        double Confidence,
+        int SampleSize,
+        string? DetailedData,
+        string? RecommendedAction,
+        DateTime GeneratedAt,
+        bool IsReviewed
+    );
+}

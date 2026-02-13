@@ -1,0 +1,149 @@
+@page "/workflows"
+@inject HttpClient Http
+@inject NavigationManager NavManager
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1>
+                <i class="fas fa-cogs me-2"></i>Workflow Automation
+            </h1>
+            <p class="text-muted">Create and manage conversation automation workflows</p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <button class="btn btn-primary" @onclick="ShowCreateModal">
+                <i class="fas fa-plus me-2"></i>New Workflow
+            </button>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="alert alert-info">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+            Loading workflows...
+        </div>
+    }
+    else if (workflows?.Count > 0)
+    {
+        <div class="row">
+            @foreach (var workflow in workflows)
+            {
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                @workflow.Name
+                                @if (workflow.IsActive)
+                                {
+                                    <span class="badge bg-success float-end">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary float-end">Inactive</span>
+                                }
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text text-muted">@workflow.Description</p>
+                            <div class="mb-3">
+                                <small class="text-muted">
+                                    <strong>Trigger:</strong> @workflow.TriggerCondition
+                                </small>
+                            </div>
+                            <div class="mb-3">
+                                <small class="text-muted">
+                                    <strong>Created:</strong> @workflow.CreatedAt.ToString("g")
+                                </small>
+                            </div>
+                            <div>
+                                <small class="text-muted">
+                                    <strong>Executions:</strong> @workflow.ExecutionCount
+                                </small>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-light">
+                            <button class="btn btn-sm btn-info me-2" @onclick="() => ViewWorkflow(workflow.Id)">
+                                <i class="fas fa-eye me-1"></i>View Details
+                            </button>
+                            <button class="btn btn-sm btn-warning me-2" @onclick="() => EditWorkflow(workflow.Id)">
+                                <i class="fas fa-edit me-1"></i>Edit
+                            </button>
+                            <button class="btn btn-sm btn-success" @onclick="() => ExecuteWorkflow(workflow.Id)">
+                                <i class="fas fa-play me-1"></i>Execute
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning">
+            <i class="fas fa-info-circle me-2"></i>
+            No workflows created yet. Create your first workflow to automate conversation responses.
+        </div>
+    }
+</div>
+
+@code {
+    private List<WorkflowDefinitionDto>? workflows;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            // TODO: Replace with actual API call
+            // workflows = await Http.GetFromJsonAsync<List<WorkflowDefinitionDto>>("api/v1/workflows");
+            
+            // Mock data for now
+            workflows = new List<WorkflowDefinitionDto>
+            {
+                new(1, "Auto-Response", "Automatically respond to common questions", "intent == help_request", new(), true, 45, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow),
+                new(2, "Escalation", "Escalate negative sentiment to support", "sentiment < 0.3", new(), true, 12, DateTime.UtcNow.AddDays(-14), DateTime.UtcNow)
+            };
+        }
+        catch (Exception ex)
+        {
+            // Handle error
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ShowCreateModal() => NavManager.NavigateTo("/workflows/create");
+    private void ViewWorkflow(int id) => NavManager.NavigateTo($"/workflows/{id}");
+    private void EditWorkflow(int id) => NavManager.NavigateTo($"/workflows/{id}/edit");
+    private async Task ExecuteWorkflow(int id)
+    {
+        // TODO: Implement execution
+        await Task.CompletedTask;
+    }
+
+    public record WorkflowDefinitionDto(
+        int Id,
+        string Name,
+        string? Description,
+        string TriggerCondition,
+        List<WorkflowStepDto> WorkflowSteps,
+        bool IsActive,
+        int ExecutionCount,
+        DateTime CreatedAt,
+        DateTime? LastExecutedAt
+    );
+
+    public record WorkflowStepDto(
+        int StepNumber,
+        string Action,
+        Dictionary<string, object>? Parameters,
+        string? Condition
+    );
+}

@@ -1,0 +1,319 @@
+@page "/segmentation"
+@inject HttpClient Http
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1>
+                <i class="fas fa-users me-2"></i>User Segmentation
+            </h1>
+            <p class="text-muted">Analyze user segments and identify at-risk users</p>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link @(GetTabActiveClass(OverviewTab))" href="#overview" role="tab" @onclick="() => SetActiveTab(OverviewTab)">
+                <i class="fas fa-chart-pie me-2"></i>Overview
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(GetTabActiveClass(ChurnTab))" href="#churn" role="tab" @onclick="() => SetActiveTab(ChurnTab)">
+                <i class="fas fa-exclamation-triangle me-2"></i>Churn Risk
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(GetTabActiveClass(EngagementTab))" href="#engagement" role="tab" @onclick="() => SetActiveTab(EngagementTab)">
+                <i class="fas fa-chart-bar me-2"></i>Engagement
+            </a>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        @if (activeTab == OverviewTab)
+        {
+            <div role="tabpanel" class="tab-pane active">
+                @if (isLoading)
+                {
+                    <div class="alert alert-info">
+                        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                        Loading segmentation data...
+                    </div>
+                }
+                else if (currentUserSegment != null)
+                {
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Your Segment Profile</h5>
+                                </div>
+                                <div class="card-body">
+                                    <dl class="row">
+                                        <dt class="col-sm-5">Engagement Level:</dt>
+                                        <dd class="col-sm-7">
+                                            <span class="badge bg-info">@currentUserSegment.EngagementLevel</span>
+                                        </dd>
+
+                                        <dt class="col-sm-5">User Segment:</dt>
+                                        <dd class="col-sm-7">
+                                            @currentUserSegment.BehavioralSegment
+                                        </dd>
+
+                                        <dt class="col-sm-5">Churn Risk:</dt>
+                                        <dd class="col-sm-7">
+                                            <span class="badge @GetRiskBadgeClass(currentUserSegment.ChurnRiskScore)">@currentUserSegment.ChurnRiskScore.ToString("P0")</span>
+                                        </dd>
+
+                                        <dt class="col-sm-5">Avg Daily Messages:</dt>
+                                        <dd class="col-sm-7">
+                                            @currentUserSegment.AverageDailyConversations.ToString("F1")
+                                        </dd>
+
+                                        <dt class="col-sm-5">Satisfaction:</dt>
+                                        <dd class="col-sm-7">
+                                            @currentUserSegment.AverageSatisfaction.ToString("F1")/5.0
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Churn Prediction</h5>
+                                </div>
+                                <div class="card-body">
+                                    @if (churnPrediction != null)
+                                    {
+                                        <div class="alert @GetChurnAlertClass(churnPrediction.ChurnRiskScore)">
+                                            <h6>Estimated Churn Risk: @churnPrediction.ChurnRiskScore.ToString("P")</h6>
+                                        </div>
+
+                                        @if (churnPrediction.RiskFactors?.Count > 0)
+                                        {
+                                            <div class="mb-3">
+                                                <strong>Risk Factors:</strong>
+                                                <ul class="mt-2">
+                                                    @foreach (var factor in churnPrediction.RiskFactors)
+                                                    {
+                                                        <li>@factor</li>
+                                                    }
+                                                </ul>
+                                            </div>
+                                        }
+
+                                        @if (churnPrediction.RetentionRecommendations?.Count > 0)
+                                        {
+                                            <div>
+                                                <strong>Recommendations:</strong>
+                                                <ul class="mt-2">
+                                                    @foreach (var rec in churnPrediction.RetentionRecommendations)
+                                                    {
+                                                        <li>@rec</li>
+                                                    }
+                                                </ul>
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (activeTab == ChurnTab)
+        {
+            <div role="tabpanel" class="tab-pane active">
+                @if (isLoading)
+                {
+                    <div class="alert alert-info">Loading...</div>
+                }
+                else if (churnRiskUsers?.Count > 0)
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>User ID</th>
+                                    <th>Engagement</th>
+                                    <th>Churn Risk</th>
+                                    <th>Satisfaction</th>
+                                    <th>Last Interaction</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var user in churnRiskUsers)
+                                {
+                                    <tr>
+                                        <td>@user.UserId</td>
+                                        <td><span class="badge bg-info">@user.EngagementLevel</span></td>
+                                        <td>
+                                            <span class="badge bg-danger">@user.ChurnRiskScore.ToString("P0")</span>
+                                        </td>
+                                        <td>@user.AverageSatisfaction.ToString("F1")/5.0</td>
+                                        <td>@user.LastInteractionDate?.ToString("g")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">No users at high churn risk.</div>
+                }
+            </div>
+        }
+
+        @if (activeTab == EngagementTab)
+        {
+            <div role="tabpanel" class="tab-pane active">
+                @if (isLoading)
+                {
+                    <div class="alert alert-info">Loading...</div>
+                }
+                else if (segmentsByEngagement?.Count > 0)
+                {
+                    <div class="row">
+                        @foreach (var segment in segmentsByEngagement)
+                        {
+                            <div class="col-md-4 mb-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">@segment.EngagementLevel</h5>
+                                        <p class="card-text">
+                                            <small class="text-muted">
+                                                Avg Satisfaction: @segment.AverageSatisfaction.ToString("F1")<br>
+                                                Daily Activity: @segment.AverageDailyConversations.ToString("F1") msgs<br>
+                                                Churn Risk: @segment.ChurnRiskScore.ToString("P0")
+                                            </small>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private const string OverviewTab = "overview";
+    private const string ChurnTab = "churn";
+    private const string EngagementTab = "engagement";
+
+    private UserSegmentDto? currentUserSegment;
+    private List<UserSegmentDto>? churnRiskUsers;
+    private List<UserSegmentDto>? segmentsByEngagement;
+    private ChurnPredictionDto? churnPrediction;
+    private bool isLoading = true;
+    private string activeTab = OverviewTab;
+
+    private void SetActiveTab(string tab)
+    {
+        activeTab = tab;
+    }
+
+    private string GetTabActiveClass(string tab)
+    {
+        return activeTab == tab ? "active" : "";
+    }
+
+    private string GetRiskBadgeClass(double riskScore)
+    {
+        if (riskScore > 0.7) return "badge bg-danger";
+        if (riskScore > 0.4) return "badge bg-warning";
+        return "badge bg-success";
+    }
+
+    private string GetChurnAlertClass(double riskScore)
+    {
+        if (riskScore > 0.7) return "alert alert-danger";
+        if (riskScore > 0.4) return "alert alert-warning";
+        return "alert alert-success";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            // TODO: Replace with actual API calls
+            // currentUserSegment = await Http.GetFromJsonAsync<UserSegmentDto>("api/v1/segmentation");
+            // churnRiskUsers = await Http.GetFromJsonAsync<List<UserSegmentDto>>("api/v1/segmentation/churn-risk");
+            // churnPrediction = await Http.GetFromJsonAsync<ChurnPredictionDto>("api/v1/segmentation/predict-churn");
+            
+            // Mock data
+            currentUserSegment = new UserSegmentDto(
+                Id: 1,
+                UserId: 1,
+                EngagementLevel: "High",
+                BehavioralSegment: "Power User",
+                ChurnRiskScore: 0.15,
+                AverageDailyConversations: 8.5,
+                AverageSatisfaction: 4.3,
+                PrimaryUseCase: "Customer Support",
+                LastInteractionDate: DateTime.UtcNow,
+                PredictedChurnDate: null,
+                UpdatedAt: DateTime.UtcNow
+            );
+
+            churnPrediction = new ChurnPredictionDto(
+                UserId: 1,
+                ChurnRiskScore: 0.15,
+                PredictedChurnDate: null,
+                RiskFactors: new List<string> { "Low risk - high engagement" },
+                RetentionRecommendations: new List<string> { "Continue current support quality" }
+            );
+
+            churnRiskUsers = new List<UserSegmentDto>
+            {
+                new(2, 2, "Low", "At-Risk", 0.85, 1.2, 2.1, "Occasional User", DateTime.UtcNow.AddDays(-14), DateTime.UtcNow.AddDays(7), DateTime.UtcNow),
+                new(3, 3, "Medium", "Casual User", 0.62, 3.5, 3.0, "Support", DateTime.UtcNow.AddDays(-7), DateTime.UtcNow.AddDays(21), DateTime.UtcNow)
+            };
+
+            segmentsByEngagement = new List<UserSegmentDto>
+            {
+                new(4, 4, "High", "Power User", 0.2, 7.8, 4.6, "Admin", DateTime.UtcNow, null, DateTime.UtcNow),
+                new(5, 5, "Medium", "Regular User", 0.5, 4.2, 3.8, "Support", DateTime.UtcNow, null, DateTime.UtcNow),
+                new(6, 6, "Low", "Casual User", 0.8, 1.5, 3.2, "Occasional", DateTime.UtcNow, null, DateTime.UtcNow)
+            };
+        }
+        catch (Exception)
+        {
+            // Handle error
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    public record UserSegmentDto(
+        int Id,
+        int UserId,
+        string EngagementLevel,
+        string BehavioralSegment,
+        double ChurnRiskScore,
+        double AverageDailyConversations,
+        double AverageSatisfaction,
+        string? PrimaryUseCase,
+        DateTime? LastInteractionDate,
+        DateTime? PredictedChurnDate,
+        DateTime UpdatedAt
+    );
+
+    public record ChurnPredictionDto(
+        int UserId,
+        double ChurnRiskScore,
+        DateTime? PredictedChurnDate,
+        List<string> RiskFactors,
+        List<string> RetentionRecommendations
+    );
+}
