@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components
 @using Chatbot.Web.Services
+@using Chatbot.Web.Models
 @attribute [Authorize]
 
 <PageTitle>User Profile</PageTitle>
@@ -320,7 +321,7 @@
     [Inject]
     private NavigationManager Navigation { get; set; } = null!;
 
-    private Chatbot.Web.Services.ConversationAnalytics? analytics;
+    private Chatbot.Web.Models.ConversationAnalytics? analytics;
     private UserPreferences? preferences;
     private AuthenticationState? AuthContext;
     private string? errorMessage;

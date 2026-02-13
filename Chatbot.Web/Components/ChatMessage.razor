@@ -1,5 +1,6 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
+@using Chatbot.Core.Models.Responses
 
 <div class="message-container @(IsUserMessage ? "user-message" : "bot-message")">
     <div class="message-header">

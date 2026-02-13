@@ -1,14 +1,8 @@
-using Chatbot.Core.Models;
+using Chatbot.Core.Models.Requests;
+using Chatbot.Core.Models.Responses;
 using System.Net.Http.Json;
 
 namespace Chatbot.Web.Services;
-
-public interface IChatService
-{
-    Task<(bool Success, string Message, ConversationResponse? Conversation)> StartConversationAsync(string? title = null);
-    Task<(bool Success, string Message, ChatMessageResponse? Response)> SendMessageAsync(int conversationId, string message);
-    Task<(bool Success, string Message, MessageHistoryResponse? History)> GetHistoryAsync(int conversationId);
-}
 
 public class ChatService : IChatService
 {

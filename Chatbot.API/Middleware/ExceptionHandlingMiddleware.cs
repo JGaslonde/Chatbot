@@ -1,5 +1,5 @@
 using Chatbot.API.Exceptions;
-using Chatbot.Core.Models;
+using Chatbot.Core.Models.Responses;
 using System.Text.Json;
 
 namespace Chatbot.API.Middleware;

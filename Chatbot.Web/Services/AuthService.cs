@@ -1,4 +1,5 @@
-using Chatbot.Core.Models;
+using Chatbot.Core.Models.Requests;
+using Chatbot.Core.Models.Responses;
 using System.Net.Http.Json;
 using System.Net.Http.Headers;
 

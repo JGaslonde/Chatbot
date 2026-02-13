@@ -1,38 +1,8 @@
-using Chatbot.Core.Models;
+using Chatbot.Core.Models.Responses;
+using Chatbot.Web.Models;
 using System.Net.Http.Json;
 
 namespace Chatbot.Web.Services;
-
-/// <summary>
-/// Analytics data models for display
-/// </summary>
-public record ConversationAnalytics(
-    int TotalConversations,
-    int TotalMessages,
-    double AverageSentiment,
-    Dictionary<string, int> IntentDistribution,
-    Dictionary<string, int> SentimentDistribution,
-    DateTime AnalyzedAt
-);
-
-public record SentimentTrend(
-    DateTime Date,
-    double AverageSentiment,
-    int MessageCount
-);
-
-public record IntentDistribution(
-    string Intent,
-    int Count,
-    double Percentage
-);
-
-public interface IAnalyticsService
-{
-    Task<(bool Success, string Message, ConversationAnalytics? Analytics)> GetAnalyticsAsync(DateTime? startDate = null, DateTime? endDate = null);
-    Task<(bool Success, string Message, List<SentimentTrend>? Trends)> GetSentimentTrendsAsync(int days = 7);
-    Task<(bool Success, string Message, List<IntentDistribution>? Distribution)> GetIntentDistributionAsync(int days = 30);
-}
 
 public class AnalyticsService : IAnalyticsService
 {

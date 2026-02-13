@@ -1,4 +1,4 @@
-using Chatbot.Core.Models;
+using Chatbot.Core.Models.Responses;
 using System.Net.Http.Json;
 
 namespace Chatbot.Web.Services;

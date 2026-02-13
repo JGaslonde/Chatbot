@@ -2,6 +2,7 @@ using Chatbot.API.Services.Analytics;
 using Chatbot.API.Services.Core;
 using Chatbot.API.Services.Export;
 using Chatbot.Core.Models;
+using Chatbot.Core.Models.Responses;
 using Chatbot.Core.Models.Entities;
 using Microsoft.Extensions.Logging;
 
