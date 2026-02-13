@@ -15,7 +15,8 @@
         <div class="home-section">
             <h3>New Conversation</h3>
             <p>Start a fresh conversation with the chatbot.</p>
-            <input type="text" @bind="newConversationTitle" placeholder="Optional: Give your conversation a title" class="form-control mb-2" />
+            <input type="text" @bind="newConversationTitle" placeholder="Optional: Give your conversation a title"
+                   class="form-control mb-2" />
             <button class="btn btn-primary" @onclick="StartNewConversation" disabled="@IsLoading">
                 @if (IsLoading)
                 {
@@ -27,12 +28,8 @@
 
         <div class="home-section">
             <h3>Recent Conversations</h3>
-            <ContentList 
-                Items="conversations" 
-                IsLoading="IsLoadingConversations"
-                ErrorMessage="conversationError"
-                EmptyMessage="No conversations yet. Start one to get began!"
-                OnItemSelected="SelectConversation" />
+            <ContentList Items="conversations" IsLoading="IsLoadingConversations"                ErrorMessage="conversationError"
+                         EmptyMessage="No conversations yet. Start one to get began!"                OnItemSelected="SelectConversation" />
         </div>
 
         <div class="home-section">
@@ -72,59 +69,59 @@
 </div>
 
 <style>
-.home-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-}
+    .home-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
 
-.home-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 20px;
-    margin: 30px 0;
-}
+    .home-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 20px;
+        margin: 30px 0;
+    }
 
-.home-section {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
-}
+    .home-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+    }
 
-.home-section h3 {
-    margin-top: 0;
-    color: #333;
-}
+    .home-section h3 {
+        margin-top: 0;
+        color: #333;
+    }
 
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-    gap: 15px;
-}
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 15px;
+    }
 
-.stat-item {
-    background: white;
-    padding: 15px;
-    border-radius: 6px;
-    text-align: center;
-    border: 1px solid #dee2e6;
-}
+    .stat-item {
+        background: white;
+        padding: 15px;
+        border-radius: 6px;
+        text-align: center;
+        border: 1px solid #dee2e6;
+    }
 
-.stat-value {
-    display: block;
-    font-size: 24px;
-    font-weight: bold;
-    color: #007bff;
-    margin-bottom: 5px;
-}
+    .stat-value {
+        display: block;
+        font-size: 24px;
+        font-weight: bold;
+        color: #007bff;
+        margin-bottom: 5px;
+    }
 
-.stat-label {
-    display: block;
-    font-size: 12px;
-    color: #666;
-    text-transform: uppercase;
-}
+    .stat-label {
+        display: block;
+        font-size: 12px;
+        color: #666;
+        text-transform: uppercase;
+    }
 </style>
 
 @code {
@@ -239,4 +236,3 @@
         Navigation.NavigateTo($"/chat/{conversation.Id}");
     }
 }
-

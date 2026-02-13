@@ -67,7 +67,7 @@ public class ChatFacadeService : IChatFacadeService
     {
         _logger.LogInformation("Retrieving conversation history for {ConversationId}", conversationId);
         var messages = await _conversationService.GetConversationHistoryAsync(conversationId);
-        
+
         var messageDtos = messages.Select(m => new MessageDto(
             Id: m.Id,
             Content: m.Content,
@@ -77,7 +77,7 @@ public class ChatFacadeService : IChatFacadeService
             Intent: m.DetectedIntent,
             SentimentScore: m.SentimentScore
         )).ToList();
-        
+
         return new MessageHistoryResponse(
             ConversationId: conversationId,
             Messages: messageDtos
