@@ -23,6 +23,15 @@ using Chatbot.API.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Validate critical configuration at startup
+var jwtKeyAtStartup = builder.Configuration["Jwt:Key"]
+    ?? Environment.GetEnvironmentVariable("JWT__Key")
+    ?? string.Empty;
+if (string.IsNullOrWhiteSpace(jwtKeyAtStartup) || jwtKeyAtStartup.Length < 32)
+    throw new InvalidOperationException(
+        "JWT:Key must be set via environment variable JWT__Key or configuration and must be at least 32 characters. " +
+        "Never commit a real key to source control.");
+
 // Add database context
 // Use InMemory database for testing if environment variable is set
 var useInMemoryDatabase = builder.Environment.EnvironmentName == "Testing";
@@ -53,7 +62,9 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not configured");
+    var jwtKey = builder.Configuration["Jwt:Key"]
+        ?? Environment.GetEnvironmentVariable("JWT__Key")
+        ?? throw new InvalidOperationException("JWT Key not configured");
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
@@ -84,7 +95,13 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireClaim("role", "Admin"));
+    options.AddPolicy("ModeratorOrAdmin", policy =>
+        policy.RequireAssertion(ctx =>
+            ctx.User.HasClaim("role", "Admin") || ctx.User.HasClaim("role", "Moderator")));
+});
 
 builder.Services.AddSwaggerGen();
 
@@ -108,6 +125,9 @@ builder.Services.AddScoped<IApiResponseBuilder, ApiResponseBuilder>();
 builder.Services.AddScoped<IConversationAccessControl, ConversationAccessControl>();
 builder.Services.AddScoped<IChatFacadeService, ChatFacadeService>();
 
+// Register LLM service
+builder.Services.AddScoped<ILlmResponseService, AnthropicLlmResponseService>();
+
 // Register application services
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IMessageAnalyticsService, MessageAnalyticsService>();
@@ -120,26 +140,34 @@ builder.Services.AddScoped<IConversationSummarizationService, ConversationSummar
 builder.Services.AddScoped<IConversationAnalyticsService, ConversationAnalyticsService>();
 builder.Services.AddScoped<IUserPreferencesService, UserPreferencesService>();
 builder.Services.AddScoped<IConversationExportService, ConversationExportService>();
+builder.Services.AddScoped<IKnowledgeBaseService, KnowledgeBaseService>();
 
 // Add CORS with SignalR support
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
+    var allowedOrigins = builder.Configuration
+        .GetSection("Cors:AllowedOrigins")
+        .Get<string[]>() ?? [];
+
+    options.AddPolicy("RestApi",
         policyBuilder =>
         {
-            policyBuilder.AllowAnyOrigin()
-                   .AllowAnyMethod()
-                   .AllowAnyHeader();
+            policyBuilder
+                .WithOrigins(allowedOrigins)
+                .WithMethods("GET", "POST", "PUT", "DELETE")
+                .WithHeaders("Content-Type", "Authorization")
+                .SetIsOriginAllowedToAllowWildcardSubdomains();
         });
 
-    // Separate CORS policy for SignalR (allows credentials)
+    // SignalR requires credentials (cookies/auth headers) — restrict to known origins
     options.AddPolicy("SignalRCors",
         policyBuilder =>
         {
-            policyBuilder.WithOrigins("http://localhost:3000", "https://localhost:3000") // Add your client URLs
-                   .AllowAnyMethod()
-                   .AllowAnyHeader()
-                   .AllowCredentials();
+            policyBuilder
+                .WithOrigins(allowedOrigins)
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials();
         });
 });
 
@@ -167,11 +195,8 @@ using (var scope = app.Services.CreateScope())
 // Exception handling middleware should be first
 app.UseExceptionHandling();
 
-// Request/Response logging (after exception handling)
-if (app.Environment.IsDevelopment())
-{
-    app.UseRequestResponseLogging();
-}
+// Request/Response logging (after exception handling) — enabled in all environments
+app.UseRequestResponseLogging();
 
 // Rate limiting
 app.UseRateLimiting();
@@ -183,8 +208,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseCors("AllowAll");
+app.UseSecurityHeaders();
+app.UseCors("RestApi");
 app.UseAuthentication();
+app.UseTokenRevocation();
 app.UseAuthorization();
 app.MapControllers();
 

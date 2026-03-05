@@ -77,7 +77,10 @@ public class AuthenticationService : IAuthenticationService
         try
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not configured"));
+            var key = Encoding.UTF8.GetBytes(
+                _configuration["Jwt:Key"]
+                ?? Environment.GetEnvironmentVariable("JWT__Key")
+                ?? throw new InvalidOperationException("JWT Key not configured"));
 
             tokenHandler.ValidateToken(token, new TokenValidationParameters
             {
@@ -96,22 +99,24 @@ public class AuthenticationService : IAuthenticationService
 
             return await _userRepository.GetByIdAsync(userId);
         }
-        catch
+        catch (SecurityTokenException)
         {
+            // Expected: token is malformed, expired, or has invalid signature
             return null;
         }
+        // All other exceptions (DB failure, config errors) propagate to ExceptionHandlingMiddleware
     }
 
     public string GenerateToken(User user)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not configured"));
+        var key = Encoding.UTF8.GetBytes(
+            _configuration["Jwt:Key"]
+            ?? Environment.GetEnvironmentVariable("JWT__Key")
+            ?? throw new InvalidOperationException("JWT Key not configured"));
 
-        // Parse expire minutes with proper error handling
         if (!double.TryParse(_configuration["Jwt:ExpireMinutes"], out double expireMinutes))
-        {
-            expireMinutes = 1440; // Default to 24 hours if parsing fails
-        }
+            expireMinutes = 1440;
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
@@ -120,6 +125,7 @@ public class AuthenticationService : IAuthenticationService
                 new Claim("id", user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.Username),
                 new Claim(ClaimTypes.Email, user.Email),
+                new Claim("role", user.Role.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             }),
             Expires = DateTime.UtcNow.AddMinutes(expireMinutes),

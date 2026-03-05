@@ -27,6 +27,8 @@ public class ConversationService : IConversationService
     private readonly IConversationSummarizationService _summarizationService;
     private readonly ISentimentAnalysisService _sentimentService;
     private readonly IIntentRecognitionService _intentService;
+    private readonly ILlmResponseService _llmResponseService;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<ConversationService> _logger;
 
     public ConversationService(
@@ -38,6 +40,8 @@ public class ConversationService : IConversationService
         IConversationSummarizationService summarizationService,
         ISentimentAnalysisService sentimentService,
         IIntentRecognitionService intentService,
+        ILlmResponseService llmResponseService,
+        IConfiguration configuration,
         ILogger<ConversationService> logger)
     {
         _userRepository = userRepository;
@@ -48,6 +52,8 @@ public class ConversationService : IConversationService
         _summarizationService = summarizationService;
         _sentimentService = sentimentService;
         _intentService = intentService;
+        _llmResponseService = llmResponseService;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -140,26 +146,29 @@ public class ConversationService : IConversationService
     {
         _logger.LogInformation("Generating bot response for conversation {ConversationId}", conversationId);
 
-        // Get conversation with recent messages
         var conversation = await _conversationRepository.GetWithMessagesAsync(conversationId);
         if (conversation == null)
             throw new InvalidOperationException("Conversation not found");
 
-        // Get recent messages for context
         var recentMessages = conversation.Messages
             .OrderByDescending(m => m.SentAt)
-            .Take(10)
+            .Take(20)
             .OrderBy(m => m.SentAt)
             .ToList();
 
-        // Analyze user message
+        // Try LLM first if enabled
+        var llmEnabled = _configuration.GetValue<bool>("Llm:Enabled", false);
+        if (llmEnabled)
+        {
+            var llmResponse = await _llmResponseService.GenerateResponseAsync(userMessage, recentMessages);
+            if (!string.IsNullOrWhiteSpace(llmResponse))
+                return llmResponse;
+        }
+
+        // Fall back to rule-based template responses
         var analysis = await _messageAnalytics.AnalyzeMessageAsync(userMessage);
-
-        // Generate context-aware response
-        var response = _responseTemplateService.GenerateContextAwareResponse(
+        return _responseTemplateService.GenerateContextAwareResponse(
             userMessage, recentMessages, analysis.Intent ?? "unknown", analysis.Sentiment);
-
-        return response;
     }
 
     public async Task UpdateConversationSummaryAsync(int conversationId)
