@@ -60,3 +60,10 @@ public record HealthResponse(
     DateTime Timestamp,
     string Version
 );
+
+public record PaginatedResponse<T>(
+    int Total,
+    int Page,
+    int PageSize,
+    IEnumerable<T> Data
+);
