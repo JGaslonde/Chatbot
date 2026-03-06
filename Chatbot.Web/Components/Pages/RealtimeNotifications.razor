@@ -1,0 +1,523 @@
+@using Microsoft.AspNetCore.SignalR.Client
+@using System.Diagnostics
+@implements IAsyncDisposable
+@page "/realtime-notifications"
+
+<div class="notifications-container">
+    <div class="card">
+        <div class="card-header">
+            <h3>Real-Time Notifications & Activity Feed</h3>
+            <div class="connection-status">
+                <span class="status-badge @GetStatusClass()">
+                    @connectionStatus
+                </span>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="notification-tabs">
+                <button class="tab-btn @(activeTab == "notifications" ? "active" : "")"
+                        @onclick='() => activeTab = "notifications"'>
+                    Notifications
+                    @if (systemNotifications.Count > 0)
+                    {
+                        <span class="badge">@systemNotifications.Count</span>
+                    }
+                </button>
+                <button class="tab-btn @(activeTab == "activity" ? "active" : "")"
+                        @onclick='() => activeTab = "activity"'>
+                    Activity Feed
+                    @if (activityFeed.Count > 0)
+                    {
+                        <span class="badge">@activityFeed.Count</span>
+                    }
+                </button>
+                <button class="tab-btn @(activeTab == "analytics" ? "active" : "")"
+                        @onclick='() => activeTab = "analytics"'>
+                    Live Analytics
+                    @if (analyticsUpdates.Count > 0)
+                    {
+                        <span class="badge">@analyticsUpdates.Count</span>
+                    }
+                </button>
+            </div>
+
+            @if (activeTab == "notifications")
+            {
+                <div class="notifications-list">
+                    @if (systemNotifications.Count > 0)
+                    {
+                        @foreach (var notification in systemNotifications.OrderByDescending(n => n.Timestamp))
+                        {
+                            <div class="notification-item @("notification-" + notification.Type)">
+                                <div class="notification-header">
+                                    <span class="notification-title">@notification.Title</span>
+                                    <span class="notification-time">@notification.Timestamp.ToString("g")</span>
+                                </div>
+                                <div class="notification-body">
+                                    @notification.Message
+                                </div>
+                                @if (!string.IsNullOrEmpty(notification.ActionUrl))
+                                {
+                                    <div class="notification-action">
+                                        <a href="@notification.ActionUrl" class="btn btn-sm btn-link">View</a>
+                                    </div>
+                                }
+                                <button class="btn-close" @onclick="() => systemNotifications.Remove(notification)">×</button>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="empty-state">No notifications</p>
+                    }
+                </div>
+            }
+
+            @if (activeTab == "activity")
+            {
+                <div class="activity-feed">
+                    @if (activityFeed.Count > 0)
+                    {
+                        @foreach (var activity in activityFeed.OrderByDescending(a => a.Timestamp))
+                        {
+                            <div class="activity-item">
+                                <div class="activity-icon @GetActivityIcon(activity.ActivityType)"></div>
+                                <div class="activity-content">
+                                    <div class="activity-title">
+                                        <strong>@activity.UserId</strong> @GetActivityDescription(activity.ActivityType)
+                                    </div>
+                                    <p class="activity-details">@activity.Description</p>
+                                    <span class="activity-time">@activity.Timestamp.ToString("g")</span>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="empty-state">No activity yet</p>
+                    }
+                </div>
+            }
+
+            @if (activeTab == "analytics")
+            {
+                <div class="analytics-updates">
+                    @if (analyticsUpdates.Count > 0)
+                    {
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th>Value</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var update in analyticsUpdates.OrderByDescending(u => u.Timestamp).Take(20))
+                                {
+                                    <tr>
+                                        <td>@update.MetricName</td>
+                                        <td><strong>@update.Value</strong></td>
+                                        <td>@update.Timestamp.ToString("g")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <p class="empty-state">No analytics updates yet</p>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Settings -->
+        <div class="card-footer">
+            <button class="btn btn-primary" @onclick="ClearAll">Clear All</button>
+            <div class="connection-info">
+                @if (!string.IsNullOrEmpty(connectionId))
+                {
+                    <small>Connection ID: @connectionId.Substring(0, Math.Min(8, connectionId.Length))...</small>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .notifications-container {
+        padding: 20px;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .connection-status {
+        display: inline-block;
+        margin-left: 20px;
+    }
+
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .status-badge.connected {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .status-badge.connecting {
+        background-color: #ffc107;
+        color: black;
+    }
+
+    .status-badge.disconnected {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .notification-tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .tab-btn {
+        background: none;
+        border: none;
+        padding: 10px 20px;
+        cursor: pointer;
+        font-weight: 500;
+        color: #666;
+        border-bottom: 2px solid transparent;
+        transition: all 0.3s;
+    }
+
+    .tab-btn.active {
+        color: #667eea;
+        border-bottom-color: #667eea;
+    }
+
+    .tab-btn .badge {
+        margin-left: 8px;
+        padding: 2px 6px;
+        background-color: #667eea;
+        color: white;
+        border-radius: 12px;
+        font-size: 11px;
+    }
+
+    .notifications-list {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+
+    .notification-item {
+        padding: 15px;
+        margin-bottom: 10px;
+        border-left: 4px solid #667eea;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        position: relative;
+    }
+
+    .notification-info {
+        border-left-color: #17a2b8;
+    }
+
+    .notification-warning {
+        border-left-color: #ffc107;
+    }
+
+    .notification-error {
+        border-left-color: #dc3545;
+    }
+
+    .notification-success {
+        border-left-color: #28a745;
+    }
+
+    .notification-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+
+    .notification-title {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .notification-time {
+        font-size: 12px;
+        color: #666;
+    }
+
+    .notification-body {
+        color: #555;
+        margin-bottom: 10px;
+    }
+
+    .btn-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        color: #999;
+    }
+
+    .activity-feed {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+
+    .activity-item {
+        display: flex;
+        padding: 15px;
+        border-bottom: 1px solid #e0e0e0;
+        gap: 15px;
+    }
+
+    .activity-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+
+    .activity-icon.conversation {
+        background-color: #e3f2fd;
+        color: #1976d2;
+    }
+
+    .activity-icon.message {
+        background-color: #f3e5f5;
+        color: #7b1fa2;
+    }
+
+    .activity-icon.search {
+        background-color: #e8f5e9;
+        color: #388e3c;
+    }
+
+    .activity-icon.report {
+        background-color: #fff3e0;
+        color: #f57c00;
+    }
+
+    .activity-content {
+        flex: 1;
+    }
+
+    .activity-title {
+        margin-bottom: 5px;
+        color: #333;
+    }
+
+    .activity-details {
+        font-size: 13px;
+        color: #666;
+        margin: 5px 0;
+    }
+
+    .activity-time {
+        font-size: 12px;
+        color: #999;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #999;
+    }
+
+    .analytics-updates {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+
+    .analytics-updates table {
+        width: 100%;
+        font-size: 14px;
+    }
+
+    .card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        border-top: 1px solid #e0e0e0;
+        background-color: #f8f9fa;
+    }
+
+    .connection-info {
+        color: #666;
+        font-size: 12px;
+    }
+</style>
+
+@code {
+    private HubConnection? hubConnection;
+    private string connectionStatus = "Disconnected";
+    private string? connectionId;
+    private string activeTab = "notifications";
+
+    private List<SystemNotificationDto> systemNotifications = new();
+    private List<ActivityDto> activityFeed = new();
+    private List<AnalyticsUpdateDto> analyticsUpdates = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            hubConnection = new HubConnectionBuilder()
+                .WithUrl("/hubs/chat")
+                .WithAutomaticReconnect()
+                .Build();
+
+            // Register event handlers
+            hubConnection.On<dynamic>("SystemNotification", OnSystemNotification);
+            hubConnection.On<dynamic>("UserActivity", OnUserActivity);
+            hubConnection.On<dynamic>("AnalyticsUpdate", OnAnalyticsUpdate);
+
+            await hubConnection.StartAsync();
+            connectionStatus = "Connected";
+            connectionId = hubConnection.ConnectionId;
+
+            // Subscribe to updates
+            await hubConnection.InvokeAsync("SubscribeToSystemNotifications");
+            await hubConnection.InvokeAsync("SubscribeToAnalyticsUpdates");
+            await hubConnection.InvokeAsync("SubscribeToActivityFeed");
+        }
+        catch (Exception ex)
+        {
+            connectionStatus = $"Error: {ex.Message}";
+        }
+    }
+
+    private void OnSystemNotification(dynamic notification)
+    {
+        systemNotifications.Add(new SystemNotificationDto
+        {
+            Title = notification.Title,
+            Message = notification.Message,
+            Type = notification.Type,
+            ActionUrl = notification.ActionUrl,
+            Timestamp = notification.Timestamp
+        });
+        StateHasChanged();
+    }
+
+    private void OnUserActivity(dynamic activity)
+    {
+        activityFeed.Add(new ActivityDto
+        {
+            UserId = activity.UserId,
+            ActivityType = activity.ActivityType,
+            Description = activity.Description,
+            ResourceId = activity.ResourceId,
+            Timestamp = activity.Timestamp
+        });
+        StateHasChanged();
+    }
+
+    private void OnAnalyticsUpdate(dynamic update)
+    {
+        analyticsUpdates.Add(new AnalyticsUpdateDto
+        {
+            ConversationId = update.ConversationId,
+            MetricName = update.MetricName,
+            Value = update.Value,
+            Timestamp = update.Timestamp
+        });
+        StateHasChanged();
+    }
+
+    private void ClearAll()
+    {
+        systemNotifications.Clear();
+        activityFeed.Clear();
+        analyticsUpdates.Clear();
+    }
+
+    private string GetStatusClass()
+    {
+        return connectionStatus switch
+        {
+            "Connected" => "connected",
+            "Connecting" => "connecting",
+            _ => "disconnected"
+        };
+    }
+
+    private string GetActivityIcon(string activityType)
+    {
+        return activityType switch
+        {
+            "conversation_started" or "conversation_ended" => "conversation",
+            "message_sent" => "message",
+            "search_executed" => "search",
+            "report_generated" => "report",
+            _ => "activity"
+        };
+    }
+
+    private string GetActivityDescription(string activityType)
+    {
+        return activityType switch
+        {
+            "conversation_started" => "started a conversation",
+            "conversation_ended" => "ended a conversation",
+            "message_sent" => "sent a message",
+            "search_executed" => "executed a search",
+            "report_generated" => "generated a report",
+            _ => "performed an activity"
+        };
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+    private class SystemNotificationDto
+    {
+        public string Title { get; set; } = "";
+        public string Message { get; set; } = "";
+        public string Type { get; set; } = "info";
+        public string? ActionUrl { get; set; }
+        public DateTime Timestamp { get; set; }
+    }
+
+    private class ActivityDto
+    {
+        public string UserId { get; set; } = "";
+        public string ActivityType { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string? ResourceId { get; set; }
+        public DateTime Timestamp { get; set; }
+    }
+
+    private class AnalyticsUpdateDto
+    {
+        public int? ConversationId { get; set; }
+        public string MetricName { get; set; } = "";
+        public double Value { get; set; }
+        public DateTime Timestamp { get; set; }
+    }
+}

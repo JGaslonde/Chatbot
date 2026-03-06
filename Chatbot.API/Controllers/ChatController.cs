@@ -107,8 +107,7 @@ public class ChatController : ApiControllerBase
         return Ok(response, "Conversation started");
     }
 
-    [HttpPost("send")]
-    [Route("{conversationId}/send")]
+    [HttpPost("{conversationId}/send")]
     [Authorize]
     public async Task<IActionResult> SendMessage(int conversationId, [FromBody] ChatMessageRequest request)
     {

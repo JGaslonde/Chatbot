@@ -101,12 +101,14 @@
             isLoading = true;
             // TODO: Replace with actual API call
             // workflows = await Http.GetFromJsonAsync<List<WorkflowDefinitionDto>>("api/v1/workflows");
-            
+
             // Mock data for now
             workflows = new List<WorkflowDefinitionDto>
             {
-                new(1, "Auto-Response", "Automatically respond to common questions", "intent == help_request", new(), true, 45, DateTime.UtcNow.AddDays(-7), DateTime.UtcNow),
-                new(2, "Escalation", "Escalate negative sentiment to support", "sentiment < 0.3", new(), true, 12, DateTime.UtcNow.AddDays(-14), DateTime.UtcNow)
+                new(1, "Auto-Response", "Automatically respond to common questions", "intent == help_request", new(), true, 45,
+DateTime.UtcNow.AddDays(-7), DateTime.UtcNow),
+                new(2, "Escalation", "Escalate negative sentiment to support", "sentiment < 0.3", new(), true, 12,
+DateTime.UtcNow.AddDays(-14), DateTime.UtcNow)
             };
         }
         catch (Exception ex)

@@ -194,4 +194,158 @@ public class ChatHub : Hub
 
         _logger.LogInformation("Report {ReportId} status broadcasted: {Status}", reportId, status);
     }
+
+    // ========== ENHANCED REAL-TIME FEATURES ==========
+
+    /// <summary>
+    /// Subscribe to system notifications (admin notifications, alerts, etc.)
+    /// </summary>
+    public async Task SubscribeToSystemNotifications()
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, "system_notifications");
+        _logger.LogInformation("Connection {ConnectionId} subscribed to system notifications", Context.ConnectionId);
+    }
+
+    /// <summary>
+    /// Subscribe to analytics real-time updates
+    /// </summary>
+    public async Task SubscribeToAnalyticsUpdates(int? conversationId = null)
+    {
+        var groupName = conversationId.HasValue ? $"analytics_conversation_{conversationId}" : "analytics_global";
+        await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+        _logger.LogInformation("Connection {ConnectionId} subscribed to analytics updates: {GroupName}", Context.ConnectionId, groupName);
+    }
+
+    /// <summary>
+    /// Subscribe to user activity feed
+    /// </summary>
+    public async Task SubscribeToActivityFeed()
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, "activity_feed");
+        _logger.LogInformation("Connection {ConnectionId} subscribed to activity feed", Context.ConnectionId);
+    }
+
+    /// <summary>
+    /// Broadcast a system notification to all connected users
+    /// </summary>
+    public async Task BroadcastSystemNotification(string title, string message, string notificationType = "info", string? actionUrl = null)
+    {
+        await Clients.Group("system_notifications")
+            .SendAsync("SystemNotification", new
+            {
+                Title = title,
+                Message = message,
+                Type = notificationType, // "info", "warning", "error", "success"
+                ActionUrl = actionUrl,
+                Timestamp = DateTime.UtcNow
+            });
+
+        _logger.LogInformation("System notification broadcasted: {Title}", title);
+    }
+
+    /// <summary>
+    /// Broadcast real-time analytics update
+    /// </summary>
+    public async Task BroadcastAnalyticsUpdate(int? conversationId, string metricName, double value, Dictionary<string, object>? metadata = null)
+    {
+        var groupName = conversationId.HasValue ? $"analytics_conversation_{conversationId}" : "analytics_global";
+
+        await Clients.Group(groupName)
+            .SendAsync("AnalyticsUpdate", new
+            {
+                ConversationId = conversationId,
+                MetricName = metricName,
+                Value = value,
+                Metadata = metadata,
+                Timestamp = DateTime.UtcNow
+            });
+
+        _logger.LogInformation("Analytics update broadcasted: {MetricName}={Value}", metricName, value);
+    }
+
+    /// <summary>
+    /// Broadcast user activity to activity feed
+    /// </summary>
+    public async Task BroadcastUserActivity(string userId, string activityType, string description, string? resourceId = null)
+    {
+        await Clients.Group("activity_feed")
+            .SendAsync("UserActivity", new
+            {
+                UserId = userId,
+                ActivityType = activityType, // "conversation_started", "message_sent", "search_executed", etc.
+                Description = description,
+                ResourceId = resourceId,
+                Timestamp = DateTime.UtcNow
+            });
+
+        _logger.LogInformation("User activity broadcasted: {UserId} - {ActivityType}", userId, activityType);
+    }
+
+    /// <summary>
+    /// Broadcast conversation status update
+    /// </summary>
+    public async Task BroadcastConversationUpdate(int conversationId, string updateType, Dictionary<string, object>? details = null)
+    {
+        await Clients.Group($"conversation_{conversationId}")
+            .SendAsync("ConversationUpdate", new
+            {
+                ConversationId = conversationId,
+                UpdateType = updateType, // "status_changed", "sentiment_updated", "metadata_changed"
+                Details = details,
+                Timestamp = DateTime.UtcNow
+            });
+
+        _logger.LogInformation("Conversation {ConversationId} update broadcasted: {UpdateType}", conversationId, updateType);
+    }
+
+    /// <summary>
+    /// Broadcast sentiment analysis update for a message
+    /// </summary>
+    public async Task BroadcastSentimentAnalysis(int conversationId, int messageId, string sentiment, double score)
+    {
+        await Clients.Group($"conversation_{conversationId}")
+            .SendAsync("SentimentAnalysis", new
+            {
+                MessageId = messageId,
+                Sentiment = sentiment,
+                Score = score,
+                Timestamp = DateTime.UtcNow
+            });
+
+        _logger.LogInformation("Sentiment analysis update broadcasted: MessageId={MessageId}, Sentiment={Sentiment}, Score={Score}",
+            messageId, sentiment, score);
+    }
+
+    /// <summary>
+    /// Broadcast intent recognition result
+    /// </summary>
+    public async Task BroadcastIntentRecognition(int conversationId, int messageId, string intent, double confidence)
+    {
+        await Clients.Group($"conversation_{conversationId}")
+            .SendAsync("IntentRecognition", new
+            {
+                MessageId = messageId,
+                Intent = intent,
+                Confidence = confidence,
+                Timestamp = DateTime.UtcNow
+            });
+
+        _logger.LogInformation("Intent recognition update broadcasted: MessageId={MessageId}, Intent={Intent}, Confidence={Confidence}",
+            messageId, intent, confidence);
+    }
+
+    /// <summary>
+    /// Broadcast real-time statistics update
+    /// </summary>
+    public async Task BroadcastStatisticsUpdate(Dictionary<string, object> statistics)
+    {
+        await Clients.All
+            .SendAsync("StatisticsUpdate", new
+            {
+                Statistics = statistics,
+                Timestamp = DateTime.UtcNow
+            });
+
+        _logger.LogInformation("Statistics update broadcasted");
+    }
 }

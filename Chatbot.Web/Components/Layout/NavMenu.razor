@@ -1,129 +1,374 @@
 ﻿@using Chatbot.Web.Services.Interfaces
 
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">Chatbot</a>
+<div class="navbar-wrapper">
+    <div class="navbar-header">
+        <div class="navbar-brand-section">
+            <a class="navbar-brand" href="">
+                <span class="brand-icon">💬</span>
+                <span class="brand-text">Chatbot Pro</span>
+            </a>
+        </div>
+        <label title="Navigation menu" class="navbar-toggler">
+            <input type="checkbox" />
+            <span class="toggle-icon"></span>
+        </label>
+    </div>
+
+    <input type="checkbox" title="Navigation menu" class="navbar-toggler-hidden" />
+
+    <div class="nav-scrollable">
+        <nav class="nav-menu">
+            <AuthorizeView>
+                <Authorized Context="auth">
+                    <!-- PRIMARY SECTION: CHAT & CONVERSATION -->
+                    <div class="nav-section">
+                        <div class="nav-section-title">Chat</div>
+                        <div class="nav-item">
+                            <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
+                                <span class="nav-icon">🏠</span>
+                                <span class="nav-text">Home</span>
+                            </NavLink>
+                        </div>
+                        <div class="nav-item">
+                            <NavLink class="nav-link" href="/chat">
+                                <span class="nav-icon">➕</span>
+                                <span class="nav-text">New Chat</span>
+                            </NavLink>
+                        </div>
+                        <div class="nav-item">
+                            <NavLink class="nav-link" href="/history">
+                                <span class="nav-icon">🕐</span>
+                                <span class="nav-text">History</span>
+                            </NavLink>
+                        </div>
+                    </div>
+
+                    <!-- ANALYTICS & INSIGHTS SECTION -->
+                    <div class="nav-section">
+                        <div class="nav-section-title">Analytics & Insights</div>
+                        <div class="nav-item">
+                            <NavLink class="nav-link" href="/analytics-dashboard">
+                                <span class="nav-icon">📊</span>
+                                <span class="nav-text">Analytics Dashboard</span>
+                            </NavLink>
+                        </div>
+                        <div class="nav-item">
+                            <NavLink class="nav-link" href="/dashboard">
+                                <span class="nav-icon">🎯</span>
+                                <span class="nav-text">Dashboard</span>
+                            </NavLink>
+                        </div>
+                        <div class="nav-item">
+                            <NavLink class="nav-link" href="/ml-insights">
+                                <span class="nav-icon">🧠</span>
+                                <span class="nav-text">ML Insights</span>
+                            </NavLink>
+                        </div>
+                    </div>
+
+                    <!-- SEARCH & ORGANIZATION -->
+                    <div class="nav-section">
+                        <div class="nav-section-title">Search & Organize</div>
+                        <div class="nav-item">
+                            <NavLink class="nav-link" href="/advanced-search">
+                                <span class="nav-icon">🔍</span>
+                                <span class="nav-text">Advanced Search</span>
+                            </NavLink>
+                        </div>
+                        <div class="nav-item">
+                            <NavLink class="nav-link" href="/segmentation">
+                                <span class="nav-icon">👥</span>
+                                <span class="nav-text">Segmentation</span>
+                            </NavLink>
+                        </div>
+                        <div class="nav-item">
+                            <NavLink class="nav-link" href="/workflows">
+                                <span class="nav-icon">⚙️</span>
+                                <span class="nav-text">Workflows</span>
+                            </NavLink>
+                        </div>
+                    </div>
+
+                    <!-- REAL-TIME & MONITORING -->
+                    <div class="nav-section">
+                        <div class="nav-section-title">Real-Time</div>
+                        <div class="nav-item">
+                            <NavLink class="nav-link" href="/realtime-notifications">
+                                <span class="nav-icon">🔔</span>
+                                <span class="nav-text">Notifications</span>
+                            </NavLink>
+                        </div>
+                    </div>
+
+                    <!-- ADMIN SECTION (Role-based) -->
+                    @if (auth.User.IsInRole("Admin"))
+                    {
+                        <div class="nav-section admin-section">
+                            <div class="nav-section-title">Administration</div>
+                            <div class="nav-item">
+                                <NavLink class="nav-link" href="/admin/system-health">
+                                    <span class="nav-icon">❤️</span>
+                                    <span class="nav-text">System Health</span>
+                                </NavLink>
+                            </div>
+                            <div class="nav-item">
+                                <NavLink class="nav-link" href="/admin/audit-logs">
+                                    <span class="nav-icon">📋</span>
+                                    <span class="nav-text">Audit Logs</span>
+                                </NavLink>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- SETTINGS SECTION -->
+                    <div class="nav-section nav-section-bottom">
+                        <div class="nav-section-title">Settings</div>
+                        <div class="nav-item">
+                            <NavLink class="nav-link" href="/preferences">
+                                <span class="nav-icon">⚙️</span>
+                                <span class="nav-text">Preferences</span>
+                            </NavLink>
+                        </div>
+                        <div class="nav-item">
+                            <NavLink class="nav-link" href="/profile">
+                                <span class="nav-icon">👤</span>
+                                <span class="nav-text">Profile</span>
+                            </NavLink>
+                        </div>
+                    </div>
+                </Authorized>
+                <NotAuthorized>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="authentication/login">
+                            <span class="nav-icon">🔐</span>
+                            <span class="nav-text">Login</span>
+                        </NavLink>
+                    </div>
+                </NotAuthorized>
+            </AuthorizeView>
+        </nav>
     </div>
 </div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="flex-column">
-        <AuthorizeView>
-            <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
-                        <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/chat">
-                        <span class="bi bi-chat-dots-fill-nav-menu" aria-hidden="true"></span> New Chat
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/history">
-                        <span class="bi bi-clock-history-nav-menu" aria-hidden="true"></span> History
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/dashboard">
-                        <span class="bi bi-speedometer-nav-menu" aria-hidden="true"></span> Dashboard
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/analytics">
-                        <span class="bi bi-graph-up-nav-menu" aria-hidden="true"></span> Analytics
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/ml-insights">
-                        <span class="bi bi-lightbulb-nav-menu" aria-hidden="true"></span> ML Insights
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/workflows">
-                        <span class="bi bi-gear-nav-menu" aria-hidden="true"></span> Workflows
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/segmentation">
-                        <span class="bi bi-people-fill-nav-menu" aria-hidden="true"></span> Segmentation
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/advanced-search">
-                        <span class="bi bi-search-nav-menu" aria-hidden="true"></span> Search
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/preferences">
-                        <span class="bi bi-gear-fill-nav-menu" aria-hidden="true"></span> Preferences
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/profile">
-                        <span class="bi bi-person-circle-nav-menu" aria-hidden="true"></span> Profile
-                    </NavLink>
-                </div>
-
-                <hr class="my-3" />
-
-                <div class="nav-item px-3">
-                    <button class="nav-link btn btn-link text-start w-100" @onclick="Logout">
-                        <span class="bi bi-door-left-nav-menu" aria-hidden="true"></span> Logout
-                    </button>
-                </div>
-            </Authorized>
-            <NotAuthorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/login">
-                        <span class="bi bi-door-right-fill-nav-menu" aria-hidden="true"></span> Login
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/register">
-                        <span class="bi bi-person-plus-fill-nav-menu" aria-hidden="true"></span> Register
-                    </NavLink>
-                </div>
-            </NotAuthorized>
-        </AuthorizeView>
-    </nav>
-</div>
-
-@code {
-    [Inject]
-    private IAuthService AuthService { get; set; } = null!;
-
-    [Inject]
-    private NavigationManager Navigation { get; set; } = null!;
-
-    private async Task Logout()
-    {
-        await AuthService.LogoutAsync();
-        Navigation.NavigateTo("/login");
-    }
-}
-
 <style>
-    .nav-link.btn {
-        padding-left: 0;
-        padding-right: 0;
+    .navbar-wrapper {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 280px;
+        z-index: 1000;
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
     }
 
-    .nav-link.btn:hover {
+    .navbar-header {
+        padding: 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .navbar-brand-section {
+        flex: 1;
+    }
+
+    .navbar-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        color: white;
+        font-weight: 700;
+        font-size: 18px;
+        transition: transform 0.2s;
+    }
+
+    .navbar-brand:hover {
+        transform: scale(1.05);
+    }
+
+    .brand-icon {
+        font-size: 24px;
+    }
+
+    .brand-text {
+        letter-spacing: 0.5px;
+    }
+
+    .navbar-toggler-hidden {
+        display: none;
+    }
+
+    .navbar-toggler {
+        display: none;
+        cursor: pointer;
+        background: none;
+        border: none;
+        color: white;
+        font-size: 24px;
+        padding: 0;
+    }
+
+    .nav-scrollable {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px 0;
+    }
+
+    .nav-scrollable::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .nav-scrollable::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-scrollable::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 3px;
+    }
+
+    .nav-scrollable::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5);
+    }
+
+    .nav-menu {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .nav-section {
+        padding: 15px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-section-title {
+        padding: 8px 20px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .nav-section-bottom {
+        margin-top: auto;
+    }
+
+    .admin-section {
+        background-color: rgba(0, 0, 0, 0.2);
+    }
+
+    .nav-item {
+        position: relative;
+    }
+
+    .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        color: rgba(255, 255, 255, 0.85);
+        text-decoration: none;
+        transition: all 0.3s;
+        position: relative;
+    }
+
+    .nav-link:hover {
+        color: white;
         background-color: rgba(255, 255, 255, 0.1);
+        padding-left: 24px;
+    }
+
+    .nav-link.active {
+        color: white;
+        background-color: rgba(255, 255, 255, 0.2);
+        font-weight: 600;
+    }
+
+    .nav-link.active::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background-color: white;
+    }
+
+    .nav-icon {
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+
+    .nav-text {
+        white-space: nowrap;
+    }
+
+    /* Mobile responsiveness */
+    @@media (max-width: 992px) {
+        .navbar-wrapper {
+            width: 250px;
+        }
+
+        .navbar-toggler {
+            display: block;
+        }
+
+        .navbar-toggler-hidden:checked~.nav-scrollable {
+            display: flex;
+        }
+
+        .nav-scrollable {
+            display: none;
+            position: absolute;
+            top: 70px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: inherit;
+            border: none;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .navbar-wrapper {
+            width: 60px;
+        }
+
+        .brand-text {
+            display: none;
+        }
+
+        .nav-section {
+            padding: 8px 0;
+        }
+
+        .nav-section-title {
+            display: none;
+        }
+
+        .nav-link {
+            justify-content: center;
+            padding: 12px;
+            gap: 0;
+        }
+
+        .nav-text {
+            display: none;
+        }
+
+        .nav-icon {
+            font-size: 24px;
+        }
     }
 </style>
+
+@code {
+    private bool navMenuOpen = false;
+}

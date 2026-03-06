@@ -1,0 +1,265 @@
+@page "/admin/system-health"
+@using Chatbot.Core.Models.Responses
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject ILogger<SystemHealthPage> Logger
+
+<PageTitle>System Health</PageTitle>
+
+<div class="health-container">
+    <h1>System Health Monitor</h1>
+
+    <div class="refresh-section">
+        <button class="btn btn-primary" @onclick="RefreshStats">
+            Refresh Stats
+        </button>
+        <span class="refresh-timer">Last updated: @refreshTime?.ToString("g")</span>
+    </div>
+
+    @if (stats != null)
+    {
+        <div class="health-grid">
+            <div class="health-card">
+                <h3>Database Status</h3>
+                <div class="status-badge @(stats.DatabaseStatus == "Healthy" ? "badge-success" : "badge-danger")">
+                    @stats.DatabaseStatus
+                </div>
+            </div>
+
+            <div class="health-card">
+                <h3>CPU Usage</h3>
+                <div class="progress">
+                    <div class="progress-bar @GetColorClass(stats.CpuUsagePercent)" style="width: @stats.CpuUsagePercent%">
+                        @stats.CpuUsagePercent.ToString("F1")%
+                    </div>
+                </div>
+            </div>
+
+            <div class="health-card">
+                <h3>Memory Usage</h3>
+                <div class="progress">
+                    <div class="progress-bar @GetColorClass(stats.MemoryUsageMb / 1024 * 100)"
+                         style="width: @(stats.MemoryUsageMb > 0 ? Math.Min(stats.MemoryUsageMb / 1024 * 100, 100) : 0)%">
+                        @stats.MemoryUsageMb.ToString("F1") MB
+                    </div>
+                </div>
+            </div>
+
+            <div class="health-card">
+                <h3>Active Sessions</h3>
+                <div class="health-value">
+                    @activeUsers?.Count ?? 0 / @stats.TotalUsers
+                </div>
+            </div>
+        </div>
+
+        <div class="active-users-section">
+            <h2>Currently Active Users (@(activeUsers?.Count ?? 0))</h2>
+            @if (activeUsers != null && activeUsers.Any())
+            {
+                <table class="table table-condensed">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Login Time</th>
+                            <th>Last Activity</th>
+                            <th>IP Address</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in activeUsers)
+                        {
+                            <tr>
+                                <td>@user.Username (@user.FullName)</td>
+                                <td>@user.LoginTime.ToString("g")</td>
+                                <td>@((user.LastActivityTime?.ToString("g")) ?? "Never")</td>
+                                <td>@user.IpAddress</td>
+                                <td>
+                                    <button class="btn btn-sm btn-danger" @onclick="(() => ForceLogout(user.UserId))">
+                                        Force Logout
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .health-container {
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .refresh-section {
+        margin-bottom: 30px;
+        display: flex;
+        gap: 20px;
+        align-items: center;
+    }
+
+    .refresh-timer {
+        color: #666;
+        font-size: 14px;
+    }
+
+    .health-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+
+    .health-card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .health-card h3 {
+        font-size: 16px;
+        margin: 0 0 15px 0;
+        color: #333;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-weight: 600;
+        color: white;
+    }
+
+    .badge-success {
+        background-color: #28a745;
+    }
+
+    .badge-danger {
+        background-color: #dc3545;
+    }
+
+    .progress {
+        height: 30px;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        transition: width 0.3s ease;
+    }
+
+    .progress-bar.bg-success {
+        background-color: #28a745;
+    }
+
+    .progress-bar.bg-warning {
+        background-color: #ffc107;
+        color: black;
+    }
+
+    .progress-bar.bg-danger {
+        background-color: #dc3545;
+    }
+
+    .health-value {
+        font-size: 32px;
+        font-weight: bold;
+        color: #667eea;
+    }
+
+    .active-users-section {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .active-users-section h2 {
+        margin-top: 0;
+        margin-bottom: 20px;
+    }
+
+    .table-condensed td {
+        padding: 8px;
+        font-size: 14px;
+    }
+</style>
+
+@code {
+    private SystemStatsDto? stats;
+    private List<ActiveUserDto>? activeUsers;
+    private DateTime? refreshTime;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshStats();
+        // Auto-refresh every 30 seconds
+        _ = AutoRefresh();
+    }
+
+    private async Task RefreshStats()
+    {
+        try
+        {
+            var statsResponse = await Http.GetFromJsonAsync<SystemStatsDto>("api/admin/stats");
+            stats = statsResponse;
+
+            var usersResponse = await Http.GetFromJsonAsync<List<ActiveUserDto>>("api/admin/users/active");
+            activeUsers = usersResponse;
+
+            refreshTime = DateTime.Now;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Error refreshing stats: {ex.Message}");
+        }
+    }
+
+    private string GetColorClass(double value)
+    {
+        if (value < 50)
+            return "bg-success";
+        else if (value < 80)
+            return "bg-warning";
+        else
+            return "bg-danger";
+    }
+
+    private async Task ForceLogout(int userId)
+    {
+        try
+        {
+            var response = await Http.PostAsync($"api/admin/users/{userId}/logout", null);
+            if (response.IsSuccessStatusCode)
+            {
+                await RefreshStats();
+                Logger.LogInformation($"User {userId} logged out");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Error logging out user: {ex.Message}");
+        }
+    }
+
+    private async Task AutoRefresh()
+    {
+        while (true)
+        {
+            await Task.Delay(30000); // Refresh every 30 seconds
+            await RefreshStats();
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+}

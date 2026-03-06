@@ -3,202 +3,180 @@
 @using System.Net.Http.Json
 @inject HttpClient Http
 @inject NavigationManager Navigation
+@inject ILogger<Dashboard> Logger
 
-<PageTitle>Dashboard - Chatbot</PageTitle>
+<PageTitle>Dashboard - Chatbot Pro</PageTitle>
 
-<div class="container-fluid mt-4">
+<div class="dashboard-container">
     <!-- Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <h1 class="display-4">Dashboard</h1>
-            <p class="text-muted">Real-time insights and analytics for your conversations</p>
+    <div class="dashboard-header">
+        <div class="header-content">
+            <h1>Dashboard</h1>
+            <p class="header-subtitle">Welcome back! Here's your activity overview.</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-outline">📅 Last 30 Days</button>
+            <button class="btn btn-primary" @onclick="RefreshData">🔄 Refresh</button>
         </div>
     </div>
 
-    <!-- Loading State -->
     @if (isLoading)
     {
-        <div class="alert alert-info" role="alert">
-            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-            Loading dashboard data...
+        <div class="loading-skeleton">
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
         </div>
     }
-
-    <!-- Error State -->
-    @if (!string.IsNullOrEmpty(errorMessage))
+    else if (!string.IsNullOrEmpty(errorMessage))
     {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <strong>Error:</strong> @errorMessage
-            <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+        <div class="error-state">
+            <div class="error-icon">⚠️</div>
+            <h2>Something went wrong</h2>
+            <p>@errorMessage</p>
+            <button class="btn btn-primary" @onclick="RefreshData">Try Again</button>
         </div>
     }
+    else
+    {
+        <!-- Statistics Grid -->
+        <div class="stats-grid">
+            <div class="stat-card stat-card-1">
+                <div class="stat-icon">💬</div>
+                <div class="stat-content">
+                    <div class="stat-value">@totalConversations</div>
+                    <div class="stat-label">Total Conversations</div>
+                    <div class="stat-change positive">↑ 12% from last month</div>
+                </div>
+            </div>
 
-    <!-- Key Metrics Row -->
-    <div class="row mb-4">
-        <div class="col-md-3 mb-3">
-            <div class="card h-100 border-primary">
-                <div class="card-body">
-                    <h5 class="card-title text-muted mb-3">Total Conversations</h5>
-                    <h2 class="text-primary">@totalConversations</h2>
-                    <small class="text-success">↑ 12% this week</small>
+            <div class="stat-card stat-card-2">
+                <div class="stat-icon">💌</div>
+                <div class="stat-content">
+                    <div class="stat-value">@((totalConversations * 5).ToString("N0"))</div>
+                    <div class="stat-label">Messages Processed</div>
+                    <div class="stat-change positive">↑ 8% from last month</div>
+                </div>
+            </div>
+
+            <div class="stat-card stat-card-3">
+                <div class="stat-icon">😊</div>
+                <div class="stat-content">
+                    <div class="stat-value">@avgSentiment.ToString("F2")</div>
+                    <div class="stat-label">Avg Sentiment Score</div>
+                    <div class="stat-change positive">↑ Positive trend</div>
+                </div>
+            </div>
+
+            <div class="stat-card stat-card-4">
+                <div class="stat-icon">⚙️</div>
+                <div class="stat-content">
+                    <div class="stat-value">@activeWorkflows</div>
+                    <div class="stat-label">Active Workflows</div>
+                    <div class="stat-change positive">✓ All operational</div>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-3 mb-3">
-            <div class="card h-100 border-success">
-                <div class="card-body">
-                    <h5 class="card-title text-muted mb-3">Avg Sentiment</h5>
-                    <h2 class="text-success">@avgSentiment.ToString("F2")</h2>
-                    <small class="text-success">↑ +0.15 today</small>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3 mb-3">
-            <div class="card h-100 border-warning">
-                <div class="card-body">
-                    <h5 class="card-title text-muted mb-3">Pending Actions</h5>
-                    <h2 class="text-warning">@pendingActions</h2>
-                    <small class="text-danger">@unreviewed_insights unreviewed insights</small>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3 mb-3">
-            <div class="card h-100 border-info">
-                <div class="card-body">
-                    <h5 class="card-title text-muted mb-3">Active Workflows</h5>
-                    <h2 class="text-info">@activeWorkflows</h2>
-                    <small class="text-info">→ @runningExecutions executing</small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="row mb-4">
-        <div class="col-12">
+        <!-- Content Grid -->
+        <div class="content-grid">
+            <!-- Quick Actions -->
             <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Quick Actions</h5>
+                <div class="card-header">
+                    <h2>Quick Actions</h2>
                 </div>
                 <div class="card-body">
-                    <button class="btn btn-primary me-2" @onclick="NavigateToAnalytics">
-                        <i class="bi bi-graph-up"></i> View Analytics
-                    </button>
-                    <button class="btn btn-success me-2" @onclick="NavigateToWorkflows">
-                        <i class="bi bi-gear"></i> Manage Workflows
-                    </button>
-                    <button class="btn btn-info me-2" @onclick="NavigateToInsights">
-                        <i class="bi bi-lightbulb"></i> View Insights
-                    </button>
-                    <button class="btn btn-secondary me-2" @onclick="NavigateToSegmentation">
-                        <i class="bi bi-people"></i> User Segmentation
-                    </button>
-                    <button class="btn btn-outline-primary" @onclick="RefreshData">
-                        <i class="bi bi-arrow-clockwise"></i> Refresh
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Recent Activities -->
-    <div class="row">
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Top Conversation Topics</h5>
-                </div>
-                <div class="card-body">
-                    @if (topTopics != null && topTopics.Count > 0)
-                    {
-                        <ul class="list-group list-group-flush">
-                            @foreach (var topic in topTopics)
-                            {
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    @topic.Topic
-                                    <span class="badge bg-primary rounded-pill">@topic.Count</span>
-                                </li>
-                            }
-                        </ul>
-                    }
-                    else
-                    {
-                        <p class="text-muted">No topics available</p>
-                    }
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">System Status</h5>
-                </div>
-                <div class="card-body">
-                    <div class="list-group">
-                        <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between">
-                                <strong>API Health</strong>
-                                <span class="badge bg-success">Healthy</span>
-                            </div>
-                        </div>
-                        <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between">
-                                <strong>Database</strong>
-                                <span class="badge bg-success">Connected</span>
-                            </div>
-                        </div>
-                        <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between">
-                                <strong>Processing Queue</strong>
-                                <span class="badge bg-info">@queuedMessages messages</span>
-                            </div>
-                        </div>
-                        <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between">
-                                <strong>Cache Hit Rate</strong>
-                                <span class="badge bg-primary">@cacheHitRate.ToString("F1")%</span>
-                            </div>
-                        </div>
+                    <div class="quick-actions-grid">
+                        <a href="/chat" class="quick-action-btn">
+                            <span class="action-icon">➕</span>
+                            <span>New Chat</span>
+                        </a>
+                        <button class="quick-action-btn" @onclick="NavigateToSearch">
+                            <span class="action-icon">🔍</span>
+                            <span>Search</span>
+                        </button>
+                        <button class="quick-action-btn" @onclick="NavigateToAnalytics">
+                            <span class="action-icon">📊</span>
+                            <span>Analytics</span>
+                        </button>
+                        <a href="/profile" class="quick-action-btn">
+                            <span class="action-icon">👤</span>
+                            <span>Profile</span>
+                        </a>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Analytics Summary -->
-    <div class="row mt-4">
-        <div class="col-12">
+            <!-- Recent Activity -->
             <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">7-Day Trend</h5>
+                <div class="card-header">
+                    <h2>Recent Conversations</h2>
+                    <a href="/history" class="view-all-link">View All →</a>
                 </div>
                 <div class="card-body">
-                    <div class="row text-center">
-                        @foreach (var day in Last7Days)
+                    <div class="activity-list">
+                        @if (topTopics != null && topTopics.Count > 0)
                         {
-                            <div class="col">
-                                <h6>@day.DayOfWeek.ToString().Substring(0, 3)</h6>
-                                <p class="mb-0">
-                                    <i class="bi bi-chat-dots text-primary"></i>
-                                    <strong>@day.Day</strong>
-                                </p>
-                            </div>
+                            @foreach (var topic in topTopics.Take(3))
+                            {
+                                <div class="activity-item">
+                                    <div class="activity-avatar">💬</div>
+                                    <div class="activity-details">
+                                        <div class="activity-title">@topic.Topic</div>
+                                        <div class="activity-time">@topic.Count conversations</div>
+                                    </div>
+                                    <div class="activity-status">✓ Active</div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <p class="text-muted">No recent conversations</p>
                         }
                     </div>
                 </div>
             </div>
+
+            <!-- System Status -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>System Status</h2>
+                </div>
+                <div class="card-body">
+                    <div class="status-items">
+                        <div class="status-item">
+                            <div class="status-indicator healthy"></div>
+                            <div class="status-text">
+                                <div class="status-name">API Server</div>
+                                <div class="status-detail">Operational</div>
+                            </div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-indicator healthy"></div>
+                            <div class="status-text">
+                                <div class="status-name">Database</div>
+                                <div class="status-detail">24ms response</div>
+                            </div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-indicator healthy"></div>
+                            <div class="status-text">
+                                <div class="status-name">Cache</div>
+                                <div class="status-detail">Hit rate: @cacheHitRate.ToString("F1")%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
+    }
 </div>
 
 @code {
     private bool isLoading = true;
     private string? errorMessage;
-    
+
     // Metrics
     private int totalConversations = 0;
     private double avgSentiment = 0.0;
@@ -208,7 +186,7 @@
     private int runningExecutions = 0;
     private int queuedMessages = 0;
     private double cacheHitRate = 92.5;
-    
+
     // Collections
     private List<(string Topic, int Count)> topTopics = new();
     private List<DateTime> Last7Days = new();
@@ -235,9 +213,9 @@
         // Simulate API calls with mock data
         // In production, these would be real HTTP calls:
         // var analytics = await Http.GetFromJsonAsync<AnalyticsSummaryDto>("api/v1/analytics/summary");
-        
+
         await Task.Delay(500); // Simulate network latency
-        
+
         totalConversations = 847;
         avgSentiment = 0.78;
         pendingActions = 12;
@@ -265,6 +243,7 @@
 
     // Navigation Methods
     private void NavigateToAnalytics() => Navigation.NavigateTo("/analytics");
+    private void NavigateToSearch() => Navigation.NavigateTo("/advanced-search");
     private void NavigateToWorkflows() => Navigation.NavigateTo("/workflows");
     private void NavigateToInsights() => Navigation.NavigateTo("/ml-insights");
     private void NavigateToSegmentation() => Navigation.NavigateTo("/segmentation");
@@ -278,3 +257,430 @@
         isLoading = false;
     }
 }
+
+<style>
+    .dashboard-container {
+        padding: 25px;
+        background-color: #f5f7fa;
+        min-height: calc(100vh - 280px);
+    }
+
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 30px;
+    }
+
+    .header-content h1 {
+        margin: 0 0 8px 0;
+        color: #2c3e50;
+        font-size: 32px;
+        font-weight: 700;
+    }
+
+    .header-subtitle {
+        margin: 0;
+        color: #7f8c8d;
+        font-size: 14px;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn {
+        padding: 10px 18px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-outline {
+        background: white;
+        border: 1px solid #e0e0e0;
+        color: #333;
+    }
+
+    .btn-outline:hover {
+        background: #f9f9f9;
+        border-color: #667eea;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        gap: 15px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    .stat-card-1 {
+        border-left: 4px solid #667eea;
+    }
+
+    .stat-card-2 {
+        border-left: 4px solid #764ba2;
+    }
+
+    .stat-card-3 {
+        border-left: 4px solid #f093fb;
+    }
+
+    .stat-card-4 {
+        border-left: 4px solid #4facfe;
+    }
+
+    .stat-icon {
+        font-size: 32px;
+        flex-shrink: 0;
+        text-align: center;
+    }
+
+    .stat-content {
+        flex: 1;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 4px;
+    }
+
+    .stat-label {
+        font-size: 13px;
+        color: #7f8c8d;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-change {
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .stat-change.positive {
+        color: #27ae60;
+    }
+
+    .content-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 20px;
+    }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .card:hover {
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    .card-header {
+        padding: 20px;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .card-header h2 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    .view-all-link {
+        color: #667eea;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+        transition: color 0.2s ease;
+    }
+
+    .view-all-link:hover {
+        color: #764ba2;
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+
+    .quick-actions-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .quick-action-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 15px;
+        text-decoration: none;
+        color: #333;
+        border: none;
+        border-radius: 8px;
+        background: #f9f9f9;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        font-family: inherit;
+    }
+
+    .quick-action-btn:hover {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .action-icon {
+        font-size: 24px;
+    }
+
+    .activity-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .activity-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 6px;
+        background: #f9f9f9;
+        transition: all 0.2s ease;
+    }
+
+    .activity-item:hover {
+        background: #f0f0f0;
+    }
+
+    .activity-avatar {
+        font-size: 24px;
+        min-width: 36px;
+        text-align: center;
+    }
+
+    .activity-details {
+        flex: 1;
+    }
+
+    .activity-title {
+        color: #2c3e50;
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+
+    .activity-time {
+        color: #7f8c8d;
+        font-size: 12px;
+    }
+
+    .activity-status {
+        font-size: 12px;
+        font-weight: 600;
+        color: #27ae60;
+        white-space: nowrap;
+    }
+
+    .activity-status.pending {
+        color: #f39c12;
+    }
+
+    .status-items {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .status-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: #f9f9f9;
+        border-radius: 6px;
+    }
+
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .status-indicator.healthy {
+        background-color: #27ae60;
+        box-shadow: 0 0 8px rgba(39, 174, 96, 0.5);
+        animation: pulse 2s infinite;
+    }
+
+    @@keyframes pulse {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.7;
+        }
+    }
+
+    .status-text {
+        flex: 1;
+    }
+
+    .status-name {
+        color: #2c3e50;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .status-detail {
+        color: #7f8c8d;
+        font-size: 12px;
+        margin-top: 2px;
+    }
+
+    .error-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    .error-icon {
+        font-size: 48px;
+        margin-bottom: 20px;
+    }
+
+    .error-state h2 {
+        color: #2c3e50;
+        margin: 0 0 10px 0;
+    }
+
+    .error-state p {
+        color: #7f8c8d;
+        margin: 0 0 20px 0;
+    }
+
+    .loading-skeleton {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .skeleton-card {
+        height: 120px;
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 12px;
+    }
+
+    @@keyframes shimmer {
+        0% {
+            background-position: 200% 0;
+        }
+
+        100% {
+            background-position: -200% 0;
+        }
+    }
+
+    @@media (max-width: 992px) {
+        .dashboard-header {
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .header-actions {
+            width: 100%;
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .dashboard-container {
+            padding: 15px;
+        }
+
+        .header-content h1 {
+            font-size: 24px;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .quick-actions-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .stat-card {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .stat-icon {
+            font-size: 28px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+        }
+    }
+</style>

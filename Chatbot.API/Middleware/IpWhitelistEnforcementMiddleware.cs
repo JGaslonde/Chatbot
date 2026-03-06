@@ -16,8 +16,8 @@ public class IpWhitelistEnforcementMiddleware
 
     public async Task InvokeAsync(HttpContext context, IIpWhitelistService ipWhitelistService)
     {
-        // Only enforce whitelist for /api/phase2 endpoints with authenticated users
-        if (!context.Request.Path.StartsWithSegments("/api/phase2") || context.User?.Identity?.IsAuthenticated != true)
+        // Only enforce whitelist for /api/v1/enterprise endpoints with authenticated users
+        if (!context.Request.Path.StartsWithSegments("/api/v1/enterprise") || context.User?.Identity?.IsAuthenticated != true)
         {
             await _next(context);
             return;

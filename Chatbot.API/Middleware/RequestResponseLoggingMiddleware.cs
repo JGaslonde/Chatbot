@@ -16,6 +16,16 @@ public class RequestResponseLoggingMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
+        // Skip logging for static files and swagger UI
+        var path = context.Request.Path.ToString().ToLowerInvariant();
+        if (path.StartsWith("/swagger") || path.StartsWith("/css/") || path.StartsWith("/js/") ||
+            path.EndsWith(".css") || path.EndsWith(".js") || path.EndsWith(".png") ||
+            path.EndsWith(".jpg") || path.EndsWith(".gif") || path.EndsWith(".svg"))
+        {
+            await _next(context);
+            return;
+        }
+
         var requestId = Guid.NewGuid().ToString();
         context.Items["RequestId"] = requestId;
 
@@ -79,8 +89,8 @@ public class RequestResponseLoggingMiddleware
         }
 
         // Log request body for POST/PUT requests (with size limit)
-        if ((request.Method == "POST" || request.Method == "PUT") && 
-            request.ContentLength > 0 && 
+        if ((request.Method == "POST" || request.Method == "PUT") &&
+            request.ContentLength > 0 &&
             request.ContentLength < 10000) // Only log if less than 10KB
         {
             request.EnableBuffering();
@@ -88,7 +98,7 @@ public class RequestResponseLoggingMiddleware
             await request.Body.ReadAsync(buffer.AsMemory(0, buffer.Length));
             var bodyText = Encoding.UTF8.GetString(buffer);
             request.Body.Position = 0; // Reset for next middleware
-            
+
             // Mask sensitive data in body
             bodyText = MaskSensitiveData(bodyText);
             logMessage.AppendLine($"  Body: {bodyText}");
@@ -125,7 +135,7 @@ public class RequestResponseLoggingMiddleware
             response.Body.Seek(0, SeekOrigin.Begin);
             var bodyText = await new StreamReader(response.Body).ReadToEndAsync();
             response.Body.Seek(0, SeekOrigin.Begin);
-            
+
             // Mask sensitive data
             bodyText = MaskSensitiveData(bodyText);
             logMessage.AppendLine($"  Body: {bodyText}");
@@ -166,7 +176,7 @@ public class RequestResponseLoggingMiddleware
         foreach (var (_, pattern, replacement) in sensitivePatterns)
         {
             text = System.Text.RegularExpressions.Regex.Replace(
-                text, pattern, replacement, 
+                text, pattern, replacement,
                 System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         }
 

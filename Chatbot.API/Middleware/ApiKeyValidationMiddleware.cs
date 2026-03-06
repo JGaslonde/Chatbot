@@ -16,8 +16,8 @@ public class ApiKeyValidationMiddleware
 
     public async Task InvokeAsync(HttpContext context, IApiKeyService apiKeyService)
     {
-        // Only validate API keys for /api/phase2 endpoints
-        if (!context.Request.Path.StartsWithSegments("/api/phase2"))
+        // Only validate API keys for /api/v1/enterprise endpoints
+        if (!context.Request.Path.StartsWithSegments("/api/v1/enterprise"))
         {
             await _next(context);
             return;

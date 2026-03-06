@@ -13,17 +13,20 @@
 
     <ul class="nav nav-tabs mb-4" role="tablist">
         <li class="nav-item">
-            <a class="nav-link @(GetTabActiveClass(OverviewTab))" href="#overview" role="tab" @onclick="() => SetActiveTab(OverviewTab)">
+            <a class="nav-link @(GetTabActiveClass(OverviewTab))" href="#overview" role="tab"
+                   @onclick="() => SetActiveTab(OverviewTab)">
                 <i class="fas fa-chart-pie me-2"></i>Overview
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link @(GetTabActiveClass(ChurnTab))" href="#churn" role="tab" @onclick="() => SetActiveTab(ChurnTab)">
+            <a class="nav-link @(GetTabActiveClass(ChurnTab))" href="#churn" role="tab"
+                   @onclick="() => SetActiveTab(ChurnTab)">
                 <i class="fas fa-exclamation-triangle me-2"></i>Churn Risk
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link @(GetTabActiveClass(EngagementTab))" href="#engagement" role="tab" @onclick="() => SetActiveTab(EngagementTab)">
+            <a class="nav-link @(GetTabActiveClass(EngagementTab))" href="#engagement" role="tab"
+                   @onclick="() => SetActiveTab(EngagementTab)">
                 <i class="fas fa-chart-bar me-2"></i>Engagement
             </a>
         </li>
@@ -248,7 +251,7 @@
             // currentUserSegment = await Http.GetFromJsonAsync<UserSegmentDto>("api/v1/segmentation");
             // churnRiskUsers = await Http.GetFromJsonAsync<List<UserSegmentDto>>("api/v1/segmentation/churn-risk");
             // churnPrediction = await Http.GetFromJsonAsync<ChurnPredictionDto>("api/v1/segmentation/predict-churn");
-            
+
             // Mock data
             currentUserSegment = new UserSegmentDto(
                 Id: 1,
@@ -274,8 +277,10 @@
 
             churnRiskUsers = new List<UserSegmentDto>
             {
-                new(2, 2, "Low", "At-Risk", 0.85, 1.2, 2.1, "Occasional User", DateTime.UtcNow.AddDays(-14), DateTime.UtcNow.AddDays(7), DateTime.UtcNow),
-                new(3, 3, "Medium", "Casual User", 0.62, 3.5, 3.0, "Support", DateTime.UtcNow.AddDays(-7), DateTime.UtcNow.AddDays(21), DateTime.UtcNow)
+                new(2, 2, "Low", "At-Risk", 0.85, 1.2, 2.1, "Occasional User", DateTime.UtcNow.AddDays(-14), DateTime.UtcNow.AddDays(7),
+DateTime.UtcNow),
+                new(3, 3, "Medium", "Casual User", 0.62, 3.5, 3.0, "Support", DateTime.UtcNow.AddDays(-7), DateTime.UtcNow.AddDays(21),
+DateTime.UtcNow)
             };
 
             segmentsByEngagement = new List<UserSegmentDto>

@@ -1,23 +1,297 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
+<div class="main-layout">
+    <div class="sidebar-wrapper">
         <NavMenu />
     </div>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+    <main class="main-content">
+        <div class="top-bar">
+            <div class="breadcrumb-section">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/">Home</a></li>
+                        <!-- Additional breadcrumbs handled by page components -->
+                    </ol>
+                </nav>
+            </div>
+            <div class="top-bar-actions">
+                <div class="search-box">
+                    <input type="search" placeholder="Quick search..." />
+                    <span class="search-icon">🔍</span>
+                </div>
+                <button class="user-menu-btn" title="User Menu">
+                    <span class="user-icon">👤</span>
+                </button>
+            </div>
         </div>
 
-        <article class="content px-4">
+        <article class="content-area">
             @Body
         </article>
     </main>
 </div>
 
 <div id="blazor-error-ui">
-    An unhandled error has occurred.
-    <a href="" class="reload">Reload</a>
-    <a class="dismiss">🗙</a>
+    <div class="error-container">
+        <h3>⚠️ Application Error</h3>
+        <p>An unhandled error has occurred. Please try again.</p>
+        <div class="error-actions">
+            <a href="" class="btn btn-primary">Reload Page</a>
+            <a class="btn btn-secondary dismiss-btn">Dismiss</a>
+        </div>
+    </div>
 </div>
+
+<style>
+    .main-layout {
+        display: flex;
+        height: 100vh;
+        background-color: #f5f7fa;
+    }
+
+    .sidebar-wrapper {
+        flex-shrink: 0;
+    }
+
+    .main-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        margin-left: 280px;
+        overflow: hidden;
+    }
+
+    .top-bar {
+        background: white;
+        border-bottom: 1px solid #e0e0e0;
+        padding: 15px 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .breadcrumb-section {
+        flex: 1;
+    }
+
+    .breadcrumb {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        gap: 10px;
+        font-size: 14px;
+    }
+
+    .breadcrumb-item {
+        list-style: none;
+    }
+
+    .breadcrumb-item a {
+        color: #667eea;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+    .breadcrumb-item a:hover {
+        color: #764ba2;
+    }
+
+    .breadcrumb-item.active {
+        color: #666;
+    }
+
+    .top-bar-actions {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+
+    .search-box {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-box input {
+        padding: 8px 12px 8px 35px;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        width: 250px;
+        font-size: 14px;
+        transition: border-color 0.2s;
+    }
+
+    .search-box input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 10px;
+        color: #999;
+        font-size: 14px;
+    }
+
+    .user-menu-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 20px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .user-menu-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .content-area {
+        flex: 1;
+        overflow-y: auto;
+        padding: 25px;
+    }
+
+    #blazor-error-ui {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+    }
+
+    #blazor-error-ui.show {
+        display: flex;
+    }
+
+    .error-container {
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        max-width: 500px;
+        text-align: center;
+    }
+
+    .error-container h3 {
+        margin: 0 0 10px 0;
+        color: #dc3545;
+    }
+
+    .error-container p {
+        color: #666;
+        margin: 0 0 20px 0;
+    }
+
+    .error-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background-color: #667eea;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #764ba2;
+    }
+
+    .btn-secondary {
+        background-color: #e0e0e0;
+        color: #333;
+    }
+
+    .btn-secondary:hover {
+        background-color: #d0d0d0;
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 992px) {
+        .main-content {
+            margin-left: 250px;
+        }
+
+        .search-box input {
+            width: 200px;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .main-layout {
+            flex-direction: column;
+        }
+
+        .main-content {
+            margin-left: 0;
+            margin-top: 60px;
+        }
+
+        .sidebar-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            z-index: 999;
+        }
+
+        .top-bar {
+            margin-top: 60px;
+            padding: 10px 15px;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .search-box input {
+            width: 100%;
+        }
+
+        .content-area {
+            padding: 15px;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .breadcrumb {
+            font-size: 12px;
+        }
+
+        .search-box input {
+            padding: 6px 10px 6px 30px;
+            font-size: 12px;
+        }
+
+        .top-bar {
+            gap: 10px;
+        }
+    }
+</style>

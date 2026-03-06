@@ -1,74 +1,41 @@
 ﻿using Chatbot;
+using Chatbot.Services;
 
-Console.WriteLine("╔════════════════════════════════════════╗");
-Console.WriteLine("║     Welcome to C# Chatbot Console     ║");
-Console.WriteLine("╚════════════════════════════════════════╝");
+Console.Clear();
+Console.WriteLine("╔════════════════════════════════════════════════════════════╗");
+Console.WriteLine("║                                                            ║");
+Console.WriteLine("║         Welcome to Advanced C# Chatbot Console             ║");
+Console.WriteLine("║                                                            ║");
+Console.WriteLine("║  Features: Remote API Integration • Authentication        ║");
+Console.WriteLine("║            Analytics • Search • Export • Enterprise APIs  ║");
+Console.WriteLine("║                                                            ║");
+Console.WriteLine("╚════════════════════════════════════════════════════════════╝");
 Console.WriteLine();
 
-// Create chatbot instance
-var chatBot = new ChatBot("Assistant");
+// Initialize API client (will attempt to connect to localhost:5089)
+Console.WriteLine("Initializing API client...");
+var apiClient = new ApiClient("http://localhost:5089");
 
-Console.WriteLine($"Hi! I'm {chatBot.Name}, your AI assistant.");
-Console.WriteLine("Type 'exit' or 'quit' to end the conversation.");
-Console.WriteLine("Type 'history' to view recent messages with analysis.");
-Console.WriteLine("Type 'clear' to clear conversation history.");
-Console.WriteLine("Type 'analyze <message>' to analyze a message.");
-Console.WriteLine();
+// Check API availability
+var healthCheck = Task.Run(async () => await apiClient.HealthCheckAsync()).Result;
 
-// Main conversation loop
-bool running = true;
-while (running)
+if (!healthCheck)
 {
-    // Display prompt
-    Console.Write("You: ");
-    string? userInput = Console.ReadLine();
-
-    if (string.IsNullOrWhiteSpace(userInput))
-    {
-        continue;
-    }
-
-    // Check for special commands
-    string lowerInput = userInput.ToLower().Trim();
-    
-    if (lowerInput is "exit" or "quit")
-    {
-        Console.WriteLine($"\n{chatBot.Name}: {chatBot.ProcessMessage("goodbye")}");
-        running = false;
-        continue;
-    }
-
-    if (lowerInput == "history")
-    {
-        chatBot.ShowHistory();
-        continue;
-    }
-
-    if (lowerInput == "clear")
-    {
-        chatBot.ClearHistory();
-        continue;
-    }
-
-    if (lowerInput.StartsWith("analyze "))
-    {
-        string messageToAnalyze = userInput.Substring(8).Trim();
-        if (!string.IsNullOrWhiteSpace(messageToAnalyze))
-        {
-            chatBot.AnalyzeMessage(messageToAnalyze);
-        }
-        else
-        {
-            Console.WriteLine("Usage: analyze <message>");
-        }
-        continue;
-    }
-
-    // Process message and get response
-    string response = chatBot.ProcessMessage(userInput);
-    Console.WriteLine($"{chatBot.Name}: {response}");
-    Console.WriteLine();
+    Console.WriteLine("\n⚠ WARNING: API server not responding at http://localhost:5089");
+    Console.WriteLine("The console will operate in LOCAL MODE with limited features.");
+    Console.WriteLine("\nTo use full features, ensure the API is running:");
+    Console.WriteLine("  cd Chatbot.API && dotnet run");
+    Console.WriteLine("\nPress any key to continue...");
+    Console.ReadKey();
+}
+else
+{
+    Console.WriteLine("✓ API server connected successfully!\n");
 }
 
-Console.WriteLine("\nThank you for chatting! Goodbye!");
+System.Threading.Thread.Sleep(1500);
+
+// Launch the menu system
+var menu = new ConsoleMenu(apiClient);
+menu.Run();
 

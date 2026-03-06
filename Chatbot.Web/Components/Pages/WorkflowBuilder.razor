@@ -28,143 +28,147 @@
                     {
                         <div class="mb-3">
                             <label class="form-label">Workflow Name</label>
-                            <input type="text" class="form-control" @bind="currentWorkflowName" placeholder="e.g., Auto-Response Helper Requests">
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Trigger Condition</label>
-                            <textarea class="form-control" @bind="triggerCondition" rows="3" placeholder="e.g., intent == 'help_request' AND sentiment < 0.5"></textarea>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Description</label>
-                            <textarea class="form-control" @bind="workflowDescription" rows="3" placeholder="Describe what this workflow does..."></textarea>
-                        </div>
-                    }
-
-                    <div class="card bg-light mb-3">
-                        <div class="card-header">
-                            <h6 class="mb-0">Workflow Steps</h6>
-                        </div>
-                        <div class="card-body">
-                            @if (workflowSteps?.Count > 0)
-                            {
-                                <ol>
-                                    @foreach (var (step, index) in workflowSteps.Select((s, i) => (s, i)))
-                                    {
-                                        <li class="mb-2">
-                                            <strong>@step.StepType</strong>
-                                            <p class="text-muted small">@step.Config</p>
-                                            @if (isEditingWorkflow)
-                                            {
-                                                <button class="btn btn-sm btn-danger" @onclick="() => RemoveStep(index)">
-                                                    <i class="fas fa-trash me-1"></i>Remove
-                                                </button>
-                                            }
-                                        </li>
-                                    }
-                                </ol>
-                            }
-                            else
-                            {
-                                <p class="text-muted">No steps added yet</p>
-                            }
-                        </div>
-                    </div>
-
-                    @if (isEditingWorkflow)
-                    {
-                        <div class="mb-3">
-                            <label class="form-label">Add Step</label>
-                            <div class="input-group mb-2">
-                                <select class="form-select" @bind="newStepType">
-                                    <option value="">Select step type...</option>
-                                    <option value="send_message">Send Message</option>
-                                    <option value="escalate">Escalate to Agent</option>
-                                    <option value="create_task">Create Task</option>
-                                    <option value="send_email">Send Email Notification</option>
-                                    <option value="log_event">Log Event</option>
-                                    <option value="conditional">Conditional Branch</option>
-                                </select>
+                            <input type="text" class="form-control" @bind="currentWorkflowName"
+                                   placeholder="e.g., Auto-Response Helper Requests">
                             </div>
-                            <textarea class="form-control mb-2" @bind="newStepConfig" rows="2" placeholder="Step configuration (JSON)"></textarea>
-                            <button class="btn btn-sm btn-outline-primary" @onclick="AddStep">
-                                <i class="fas fa-plus me-1"></i>Add Step
-                            </button>
+
+                            <div class="mb-3">
+                                <label class="form-label">Trigger Condition</label>
+                                <textarea class="form-control" @bind="triggerCondition" rows="3"
+                                          placeholder="e.g., intent == 'help_request' AND sentiment < 0.5"></textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-control" @bind="workflowDescription" rows="3"
+                                          placeholder="Describe what this workflow does..."></textarea>
+                            </div>
+                        }
+
+                        <div class="card bg-light mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">Workflow Steps</h6>
+                            </div>
+                            <div class="card-body">
+                                @if (workflowSteps?.Count > 0)
+                                {
+                                    <ol>
+                                        @foreach (var (step, index) in workflowSteps.Select((s, i) => (s, i)))
+                                        {
+                                            <li class="mb-2">
+                                                <strong>@step.StepType</strong>
+                                                <p class="text-muted small">@step.Config</p>
+                                                @if (isEditingWorkflow)
+                                                {
+                                                    <button class="btn btn-sm btn-danger" @onclick="() => RemoveStep(index)">
+                                                        <i class="fas fa-trash me-1"></i>Remove
+                                                    </button>
+                                                }
+                                            </li>
+                                        }
+                                    </ol>
+                                }
+                                else
+                                {
+                                    <p class="text-muted">No steps added yet</p>
+                                }
+                            </div>
                         </div>
 
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-primary" @onclick="SaveWorkflow">
-                                <i class="fas fa-save me-2"></i>Save Workflow
-                            </button>
-                            <button class="btn btn-secondary" @onclick="CancelEdit">
-                                <i class="fas fa-times me-2"></i>Cancel
-                            </button>
-                        </div>
-                    }
-                    else
-                    {
-                        <button class="btn btn-outline-primary" @onclick="CreateNewWorkflow">
-                            <i class="fas fa-plus me-2"></i>New Workflow
-                        </button>
-                    }
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Workflow Library</h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="list-group list-group-flush">
-                        @if (savedWorkflows?.Count > 0)
+                        @if (isEditingWorkflow)
                         {
-                            @foreach (var workflow in savedWorkflows)
-                            {
-                                <button type="button" class="list-group-item list-group-item-action" 
-                                        @onclick="() => LoadWorkflow(workflow)">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <h6 class="mb-1">@workflow.Name</h6>
-                                            <p class="mb-0 small text-muted">@workflow.StepCount steps</p>
-                                        </div>
-                                        <span class="badge @(workflow.IsActive ? "bg-success" : "bg-secondary")">
-                                            @(workflow.IsActive ? "Active" : "Inactive")
-                                        </span>
-                                    </div>
+                            <div class="mb-3">
+                                <label class="form-label">Add Step</label>
+                                <div class="input-group mb-2">
+                                    <select class="form-select" @bind="newStepType">
+                                        <option value="">Select step type...</option>
+                                        <option value="send_message">Send Message</option>
+                                        <option value="escalate">Escalate to Agent</option>
+                                        <option value="create_task">Create Task</option>
+                                        <option value="send_email">Send Email Notification</option>
+                                        <option value="log_event">Log Event</option>
+                                        <option value="conditional">Conditional Branch</option>
+                                    </select>
+                                </div>
+                                <textarea class="form-control mb-2" @bind="newStepConfig" rows="2"
+                                          placeholder="Step configuration (JSON)"></textarea>
+                                <button class="btn btn-sm btn-outline-primary" @onclick="AddStep">
+                                    <i class="fas fa-plus me-1"></i>Add Step
                                 </button>
-                            }
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-primary" @onclick="SaveWorkflow">
+                                    <i class="fas fa-save me-2"></i>Save Workflow
+                                </button>
+                                <button class="btn btn-secondary" @onclick="CancelEdit">
+                                    <i class="fas fa-times me-2"></i>Cancel
+                                </button>
+                            </div>
                         }
                         else
                         {
-                            <div class="p-3 text-center text-muted">
-                                <p>No saved workflows</p>
-                            </div>
+                            <button class="btn btn-outline-primary" @onclick="CreateNewWorkflow">
+                                <i class="fas fa-plus me-2"></i>New Workflow
+                            </button>
                         }
                     </div>
                 </div>
             </div>
 
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h6 class="mb-0">Step Types Reference</h6>
+            <div class="col-lg-3">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Workflow Library</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            @if (savedWorkflows?.Count > 0)
+                            {
+                                @foreach (var workflow in savedWorkflows)
+                                {
+                                    <button type="button" class="list-group-item list-group-item-action"
+                                            @onclick="() => LoadWorkflow(workflow)">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-1">@workflow.Name</h6>
+                                                <p class="mb-0 small text-muted">@workflow.StepCount steps</p>
+                                            </div>
+                                            <span class="badge @(workflow.IsActive ? "bg-success" : "bg-secondary")">
+                                                @(workflow.IsActive ? "Active" : "Inactive")
+                                            </span>
+                                        </div>
+                                    </button>
+                                }
+                            }
+                            else
+                            {
+                                <div class="p-3 text-center text-muted">
+                                    <p>No saved workflows</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <ul class="small">
-                        <li><strong>Send Message:</strong> Auto-reply to user</li>
-                        <li><strong>Escalate:</strong> Route to human agent</li>
-                        <li><strong>Create Task:</strong> Generate support ticket</li>
-                        <li><strong>Send Email:</strong> Notify via email</li>
-                        <li><strong>Log Event:</strong> Record to analytics</li>
-                        <li><strong>Conditional:</strong> Branch based on conditions</li>
-                    </ul>
+
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">Step Types Reference</h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="small">
+                            <li><strong>Send Message:</strong> Auto-reply to user</li>
+                            <li><strong>Escalate:</strong> Route to human agent</li>
+                            <li><strong>Create Task:</strong> Generate support ticket</li>
+                            <li><strong>Send Email:</strong> Notify via email</li>
+                            <li><strong>Log Event:</strong> Record to analytics</li>
+                            <li><strong>Conditional:</strong> Branch based on conditions</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
 @code {
     private bool isEditingWorkflow = false;
@@ -186,7 +190,7 @@
         {
             // TODO: Load saved workflows from API
             // savedWorkflows = await Http.GetFromJsonAsync<List<SavedWorkflowDto>>("api/v1/workflows");
-            
+
             // Mock data
             savedWorkflows = new List<SavedWorkflowDto>
             {
@@ -215,7 +219,7 @@
         // TODO: Load workflow details from API
         currentWorkflowName = workflow.Name;
         isEditingWorkflow = false;
-        
+
         // Mock workflow steps
         workflowSteps = new List<WorkflowStepDto>
         {
@@ -250,13 +254,13 @@
             // TODO: Save workflow via API
             // var workflowRequest = new WorkflowDefinitionRequest
             // {
-            //     Name = currentWorkflowName,
-            //     TriggerCondition = triggerCondition,
-            //     Description = workflowDescription,
-            //     Steps = workflowSteps.ToList()
+            // Name = currentWorkflowName,
+            // TriggerCondition = triggerCondition,
+            // Description = workflowDescription,
+            // Steps = workflowSteps.ToList()
             // };
             // await Http.PostAsJsonAsync("api/v1/workflows", workflowRequest);
-            
+
             isEditingWorkflow = false;
             // Reload saved workflows
             // savedWorkflows = await Http.GetFromJsonAsync<List<SavedWorkflowDto>>("api/v1/workflows");
