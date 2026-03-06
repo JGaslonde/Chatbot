@@ -14,6 +14,10 @@ public class ChatbotDbContext : DbContext
     public DbSet<Conversation> Conversations { get; set; } = null!;
     public DbSet<Message> Messages { get; set; } = null!;
     public DbSet<UserPreferences> UserPreferences { get; set; } = null!;
+    public DbSet<MessageFeedback> MessageFeedback { get; set; } = null!;
+    public DbSet<EscalationTicket> EscalationTickets { get; set; } = null!;
+    public DbSet<KnowledgeEntry> KnowledgeEntries { get; set; } = null!;
+    public DbSet<RevokedToken> RevokedTokens { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -54,6 +58,51 @@ public class ChatbotDbContext : DbContext
         // Message configuration
         modelBuilder.Entity<Message>()
             .HasIndex(m => new { m.ConversationId, m.SentAt });
+
+        // MessageFeedback configuration
+        modelBuilder.Entity<MessageFeedback>()
+            .HasOne(f => f.Message)
+            .WithMany(m => m.Feedback)
+            .HasForeignKey(f => f.MessageId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<MessageFeedback>()
+            .HasOne(f => f.User)
+            .WithMany()
+            .HasForeignKey(f => f.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<MessageFeedback>()
+            .HasIndex(f => new { f.MessageId, f.UserId })
+            .IsUnique();
+
+        // EscalationTicket configuration
+        modelBuilder.Entity<EscalationTicket>()
+            .HasOne(t => t.Conversation)
+            .WithMany()
+            .HasForeignKey(t => t.ConversationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<EscalationTicket>()
+            .HasOne(t => t.User)
+            .WithMany()
+            .HasForeignKey(t => t.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<EscalationTicket>()
+            .HasIndex(t => t.Status);
+
+        // KnowledgeEntry configuration
+        modelBuilder.Entity<KnowledgeEntry>()
+            .HasIndex(k => k.Category);
+
+        // RevokedToken configuration
+        modelBuilder.Entity<RevokedToken>()
+            .HasIndex(r => r.Jti)
+            .IsUnique();
+
+        modelBuilder.Entity<RevokedToken>()
+            .HasIndex(r => r.ExpiresAt);
 
         // Seed initial data if needed
         SeedData(modelBuilder);

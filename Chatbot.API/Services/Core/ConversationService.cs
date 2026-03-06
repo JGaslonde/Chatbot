@@ -17,6 +17,8 @@ public class ConversationService : IConversationService
     private readonly IConversationSummarizationService _summarizationService;
     private readonly ISentimentAnalysisService _sentimentService;
     private readonly IIntentRecognitionService _intentService;
+    private readonly ILlmResponseService _llmResponseService;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<ConversationService> _logger;
 
     public ConversationService(
@@ -28,6 +30,8 @@ public class ConversationService : IConversationService
         IConversationSummarizationService summarizationService,
         ISentimentAnalysisService sentimentService,
         IIntentRecognitionService intentService,
+        ILlmResponseService llmResponseService,
+        IConfiguration configuration,
         ILogger<ConversationService> logger)
     {
         _userRepository = userRepository;
@@ -38,6 +42,8 @@ public class ConversationService : IConversationService
         _summarizationService = summarizationService;
         _sentimentService = sentimentService;
         _intentService = intentService;
+        _llmResponseService = llmResponseService;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -119,6 +125,7 @@ public class ConversationService : IConversationService
 
     public async Task<string> GenerateBotResponseAsync(int conversationId, string userMessage)
     {
+<<<<<<< HEAD
         var conversation = await GetConversationAsync(conversationId);
         if (conversation == null)
             throw new InvalidOperationException("Conversation not found");
@@ -134,6 +141,33 @@ public class ConversationService : IConversationService
         );
 
         return response;
+=======
+        _logger.LogInformation("Generating bot response for conversation {ConversationId}", conversationId);
+
+        var conversation = await _conversationRepository.GetWithMessagesAsync(conversationId);
+        if (conversation == null)
+            throw new InvalidOperationException("Conversation not found");
+
+        var recentMessages = conversation.Messages
+            .OrderByDescending(m => m.SentAt)
+            .Take(20)
+            .OrderBy(m => m.SentAt)
+            .ToList();
+
+        // Try LLM first if enabled
+        var llmEnabled = _configuration.GetValue<bool>("Llm:Enabled", false);
+        if (llmEnabled)
+        {
+            var llmResponse = await _llmResponseService.GenerateResponseAsync(userMessage, recentMessages);
+            if (!string.IsNullOrWhiteSpace(llmResponse))
+                return llmResponse;
+        }
+
+        // Fall back to rule-based template responses
+        var analysis = await _messageAnalytics.AnalyzeMessageAsync(userMessage);
+        return _responseTemplateService.GenerateContextAwareResponse(
+            userMessage, recentMessages, analysis.Intent ?? "unknown", analysis.Sentiment);
+>>>>>>> fcfb8c252c839cf3d05dc028780147fd1ffddce7
     }
 
     public async Task UpdateConversationSummaryAsync(int conversationId)

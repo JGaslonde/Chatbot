@@ -1,9 +1,20 @@
-using Chatbot.Core.Exceptions;
-using Chatbot.API.Services.Core.Interfaces;
-using Microsoft.Extensions.Logging;
-using Chatbot.API.Infrastructure.Authorization.Interfaces;
+using Chatbot.API.Exceptions;
+using Chatbot.API.Services.Core;
+using Microsoft.AspNetCore.SignalR;
 
 namespace Chatbot.API.Infrastructure.Authorization;
+
+/// <summary>
+/// Handles conversation access control and authorization checks.
+/// Applies DRY - Centralizes repeated authorization logic.
+/// Single Responsibility - Focuses solely on authorization concerns.
+/// </summary>
+public interface IConversationAccessControl
+{
+    Task<bool> HasAccessAsync(int conversationId, int userId);
+    Task VerifyAccessAsync(int conversationId, int userId);
+    Task VerifyHubAccessAsync(int conversationId, int userId, string connectionId);
+}
 
 public class ConversationAccessControl : IConversationAccessControl
 {
@@ -39,6 +50,18 @@ public class ConversationAccessControl : IConversationAccessControl
         {
             _logger.LogWarning("Access denied to conversation {ConversationId} for user {UserId}", conversationId, userId);
             throw new UnauthorizedException("Access denied to this conversation");
+        }
+    }
+
+    public async Task VerifyHubAccessAsync(int conversationId, int userId, string connectionId)
+    {
+        var hasAccess = await HasAccessAsync(conversationId, userId);
+        if (!hasAccess)
+        {
+            _logger.LogWarning(
+                "SignalR access denied to conversation {ConversationId} for user {UserId} on connection {ConnectionId}",
+                conversationId, userId, connectionId);
+            throw new HubException("Access denied to this conversation.");
         }
     }
 }
